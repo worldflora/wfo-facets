@@ -27,6 +27,9 @@
         white-space: nowrap;
     }
 
+    tr:hover {
+        background-color: lightgray;
+    }
 
 
     div#navbar {
@@ -47,7 +50,7 @@
     </style>
 
     <script>
-    const graphQlUri = "https://list.worldfloraonline.org/gql.php";
+    const graphQlUri = "<?php echo PLANT_LIST_GRAPHQL_URI ?>";
 
     function runGraphQuery(query, variables, giveBack) {
 
@@ -77,6 +80,8 @@
         <strong>WFO Facet Service: </strong>
         <a href="index.php">Facets</a>
         |
-        <a href="taxon.php">Taxon</a>
+        <a href="taxon.php">Taxa</a>
+        |
+        <a href="sources.php">Sources</a>
     </div>
     <!-- end header.php -->

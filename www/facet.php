@@ -21,7 +21,7 @@ echo "<p>{$fname['description']}</p>";
 
     echo "<ul>";
     foreach($facet_values as $fvalue){
-        echo "<li><a href=\"facet.php?id={$fvalue['id']}\"/>{$fvalue['title']}</a>: {$fvalue['description']}</li>";
+        echo "<li><strong>{$fvalue['title']}</strong>: {$fvalue['description']}</li>";
     }
     echo "</ul>";
 

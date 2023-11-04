@@ -1,18 +1,20 @@
 <?php
 require_once('../config.php');
 require_once('header.php');
+require_once('../includes/SolrIndex.php');
 
 $wfo_id = @$_GET['id'];
-/*
-$response = $mysqli->query("SELECT * FROM facet_names WHERE id = $fname_id");
-$facets = $response->fetch_all(MYSQLI_ASSOC);
-$fname = $facets[0];
-*/
+
+// stick taxon -use the one in the session if we have one
+if(!$wfo_id && @$_SESSION['wfo_id']){
+    $wfo_id = $_SESSION['wfo_id'];
+}
+$_SESSION['wfo_id'] = $wfo_id;
 
 ?>
 <table style="width: auto; float: right; margin-top: 1em;">
     <tr>
-        <td style="text-align: right; vertical-align: top;"><strong>Lookup a name: </strong></td>
+        <td style="text-align: right; vertical-align: top;"><strong>Lookup name: </strong></td>
         <td>
             <form>
                 <input id="wfo_lookup_input" type="text" style="width: 30em;">
@@ -37,32 +39,84 @@ $fname = $facets[0];
 
 <?php
 if($wfo_id){
-    echo "<h2>Taxon thing</h2>";
-    echo "<p>{$wfo_id}</p>";
+
+    $index = new SolrIndex();
+    $solr_doc = $index->getDoc($wfo_id);
+
+    if($solr_doc){
+/*
+        echo "<pre>";
+        print_r($solr_doc);
+        echo "</pre>";
+*/
+        echo "<h2>{$solr_doc->full_name_string_html_s}</h2>";
+        echo "<p><strong>{$solr_doc->role_s}</strong> | <a href=\"https://list.worldfloraonline.org/{$solr_doc->id}\">{$wfo_id}</a></p>";
+
+
+
+    }else{
+        echo "<h2>Not Found</h2>";
+        echo "<p>No taxon was found for <a href=\"https://list.worldfloraonline.org/{$wfo_id}\">{$wfo_id}</a>. Is it a valid id?</p>";
+    }
+
 }else{
     echo "<h2>Taxon</h2>";
     echo "<p>Use the form on the right to look up a name in the index.</p>";
 }
 
-?>
+/*
+ALTER TABLE `wfo_facets`.`wfo_scores` 
+ADD UNIQUE INDEX `one_source_value` USING BTREE (`wfo_id`, `facet_value_id`, `source_id`) VISIBLE;
 
+*/
+
+?>
 
 <hr />
 
-<div style="float: left; width: 50%;">
+<div style="float: left; width: 49%;">
     <h3>Facets in DB</h3>
-    <p>These are the details in the database.</p>
+
+    <?php
+    // List of all the facets and values this one has
+    $response = $mysqli->query("SELECT * FROM facet_names order by title;");
+    $facets = $response->fetch_all(MYSQLI_ASSOC);
+    $response->close();
+
+    foreach($facets as $fname){
+        echo "<h4>{$fname['title']}&nbsp;[<a href=\"score.php?wfo_id={$wfo_id}&facet_name_id={$fname['id']}\" />score</a>]</h4>";
+
+        echo "<table style=\"width: 100%;\">";
+        echo "<tr><th>Title</th><th>Description</th><th># sources</th></tr>";
+        $sql = "SELECT fv.id, fv.title, fv.`description`, count(source_id) as source_count
+            FROM facet_values AS fv 
+            left JOIN wfo_scores as s on s.facet_value_id = fv.id and fv.name_id = {$fname['id']}
+            WHERE s.wfo_id = '$wfo_id'
+            group by fv.id, fv.title, fv.`description`
+            order by fv.title;";
+        $response = $mysqli->query($sql);
+        $fvalues = $response->fetch_all(MYSQLI_ASSOC);
+        $response->close();
+        if($fvalues){
+            foreach($fvalues as $fval){
+                 echo "<tr><td>{$fval['title']}</td><td>{$fval['description']}</td><td>{$fval['source_count']}</td></tr>";
+            }
+        }else{
+            echo "<tr><td>None scored.</td></tr>";
+        }
+        echo "</table>";
+    
+    }
+
+ ?>
+
 </div>
 
-<div style="float: right; width: 50%;">
+<div style="float: right; width: 49%; border-left: 1px gray solid; padding-left: 1em;">
     <h3>Facets in Index</h3>
     <p>These are the details in the index.</p>
 </div>
 
-<div style="clear: both;">
-    <h3>Tools</h3>
-    Publish to database.
-</div>
 
 <script>
 // define the GraphQL query string ahead of times
@@ -71,17 +125,18 @@ let lookup_query =
                     taxonNameSuggestion(
                         termsString: $terms
                         limit: 100
+
                     ) {
                         id
                         stableUri
                         fullNameStringPlain,
                         fullNameStringHtml,
                         currentPreferredUsage{
-                        hasName{
-                            id,
-                            stableUri,
-                            fullNameStringHtml
-                        }
+                            hasName{
+                                id,
+                                stableUri,
+                                fullNameStringHtml
+                            }
                         }
                     }
                 }`;
@@ -117,9 +172,12 @@ document.getElementById("wfo_lookup_input").onkeyup = function(e) {
                 select.appendChild(opt);
             });
 
+
+
+
             // if we haven't found anything then put a message in
             if (select.childNodes.length == 0) {
-                select.innerHTML = `<option>Nothing found for "${query_string}" </option>`;
+                select.innerHTML = `<option disabled>Nothing found for "${query_string}" </option>`;
             }
 
         });
