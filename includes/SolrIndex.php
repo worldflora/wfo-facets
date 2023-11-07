@@ -28,6 +28,15 @@ class SolrIndex{
         return null;
     }
 
+
+    public function saveDoc($solr_doc){
+
+        $docs = array($solr_doc);
+        $solr_query_uri = SOLR_QUERY_URI . '/update?commit=true';
+        $response = $this->curlPostJson($solr_query_uri, json_encode($docs));
+
+    }
+
     /**
      * 
      * 
@@ -48,7 +57,7 @@ class SolrIndex{
     public  function getCurlHandle($uri){
         $ch = curl_init($uri);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_USERAGENT, 'WFO Plant List');
+        curl_setopt($ch, CURLOPT_USERAGENT, 'WFO Facet Service');
         curl_setopt($ch, CURLOPT_HEADER, 1);
         curl_setopt($ch, CURLOPT_USERPWD, SOLR_USER . ":" . SOLR_PASSWORD);
         return $ch;

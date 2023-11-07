@@ -64,12 +64,6 @@ if($wfo_id){
     echo "<p>Use the form on the right to look up a name in the index.</p>";
 }
 
-/*
-ALTER TABLE `wfo_facets`.`wfo_scores` 
-ADD UNIQUE INDEX `one_source_value` USING BTREE (`wfo_id`, `facet_value_id`, `source_id`) VISIBLE;
-
-*/
-
 ?>
 
 <hr />
@@ -113,7 +107,7 @@ ADD UNIQUE INDEX `one_source_value` USING BTREE (`wfo_id`, `facet_value_id`, `so
 </div>
 
 <div style="float: right; width: 49%; border-left: 1px gray solid; padding-left: 1em;">
-    <h3>Facets in Index</h3>
+    <h3>Facets in Index [<a href="update_index.php?wfo_id=<?php echo $wfo_id ?>">Update</a>]</h3>
     <p>These are the details in the index.</p>
 </div>
 
