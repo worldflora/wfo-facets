@@ -83,3 +83,9 @@ The first Columns in the CSV are as follows, subsequent columns are ignored.
 - Compound pseudanthium or umbel (Different flower shapes)
 - Non-showy wind pollinated
 
+### Habit
+
+https://en.wikipedia.org/wiki/Raunki%C3%A6r_plant_life-form
+
+
+
