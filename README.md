@@ -61,3 +61,9 @@ Faceted organisation of WFO names/taxa
 - Compound pseudanthium or umbel (Different flower shapes)
 - Non-showy wind pollinated
 
+### AusTraits as a source
+
+https://traitecoevo.github.io/austraits.build/index.html
+https://bie.ala.org.au/species/https:/id.biodiversity.org.au/taxon/apni/51286863
+
+
