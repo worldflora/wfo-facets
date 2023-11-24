@@ -1,41 +1,37 @@
 <?php
 
 require_once('../config.php');
-require_once('../includes/WfoFacets.php');
-require_once('../includes/Facet.php');
 
-echo "Extract countries from WCVP\n";
+echo "Extract facets from WCVP and put them in a CSV file\n";
 
+echo "Loading Level mappings\n";
 
-// get a list of all the countries from the facets
-$response = $mysqli->query("SELECT * FROM wfo_facets.facet_values where name_id = 2");
-$countries = $response->fetch_all(MYSQLI_ASSOC);
-$response->close();
-
-foreach($countries as $country){
-
-    // the facet to map
-    $facet = Facet::getFacetByNameValue('iso_country', $country['title']); 
-
-    // get a list of rows containing the word
-    $country_safe = $mysqli->real_escape_string($country['title']);
-    $response = $mysqli->query("SELECT wfo_id
-        FROM kew.wcvp 
-        WHERE wfo_id is not null
-        AND geographic_area 
-        like '%$country_safe%'");
-    $rows = $response->fetch_all(MYSQLI_ASSOC);
-    $response->close();
-
-    
-    // for each word we add a score.
-    foreach ($rows as $row) {
-        $wfo_id = $row['wfo_id'];
-        $mysqli->query("INSERT INTO wfo_scores (wfo_id, facet_value_id, source_id) VALUES ('$wfo_id', {$facet->getId()}, 2)");
-        if($mysqli->error){
-            echo $mysqli->error;
-            exit;
-        }
-    }
-    
+$in = fopen('../data/tdwg_level_3_2_1_mapping.csv', 'r');
+$header = fgetcsv($in);
+$tdwg_levels = array();
+while($line = fgetcsv($in)){
+    $tdwg_levels[$line[0]] = array('level3' => $line[1], 'level2' => $line[2], 'level1' => $line[3]);
 }
+fclose($in);
+
+echo "\t loaded ". count($tdwg_levels) . " mappings\n";
+
+echo "Loading ISO mappings\n";
+
+$in = fopen('../data/tdwg_level3_to_iso_alpha2.csv', 'r');
+$header = fgetcsv($in);
+$tdwg_iso = array();
+while($line = fgetcsv($in)){
+    $tdwg_iso[$line[0]] = $line[1];
+}
+fclose($in);
+
+echo "\t loaded ". count($tdwg_iso) . " mappings\n";
+
+echo "Working through WCVP\n";
+
+$out = fopen('../data/wcvp_country_scores.csv', 'w');
+
+$response = $mysqli->query("SELECT ")
+
+fclose($out);

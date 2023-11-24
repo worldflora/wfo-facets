@@ -8,89 +8,87 @@
  */
 class Facet extends WfoFacets{
 
-    private int $id;
-    private string $name;
-    private string $value;
+    protected int $id;
+    protected string $title;
+    protected ?string $description;
+    protected ?string $uri;
 
-    function __construct($id, $name, $value) {
-        $this->id = $id;
-        $this->name = $name;
-        $this->value = $value;
+    public function __construct($title, $description, $uri, $id = null) {
+        $this->title = $title;
+        $this->description = $description;
+        $this->uri = $uri;
+        $this->id = (int)$id;
     }
 
-    public static function getFacetById($id){
 
-    }
-    
-    public static function getFacetByNameValue($name, $value, $value_description = null, $create = false){
+    /**
+     * Returns a facet based on the db row
+     * 
+     */
+    public static function getFacet($init_val){
 
         global $mysqli;
 
-        $name_safe = $mysqli->real_escape_string($name);
-        $value_safe = $mysqli->real_escape_string($value);
-        $response = $mysqli->query("SELECT v.id, n.title as 'name', v.title as 'value' FROM facet_values as v JOIN facet_names as n on n.id = v.name_id WHERE n.title = '$name_safe' AND v.title = '$value_safe';");
-
-        if($response->num_rows == 0){
-            $response->close();
-            if($create){
-                
-                // we should make one as it doesn't exist
-                // does the facet name exist?
-                $response = $mysqli->query("SELECT id FROM facet_names as n WHERE n.title = '$name_safe';");
-                if($response->num_rows == 0){
-                    $mysqli->query("INSERT INTO facet_names (title) VALUES ('$name_safe');");
-                    $name_id = $mysqli->insert_id;
-                }else{
-                    $rows = $response->fetch_all(MYSQLI_ASSOC);
-                    $name_id = $rows[0]['id'];
-                }
-                $response->close();
-
-                // we have a name id let us create a value
-                $description_safe = $mysqli->real_escape_string($value_description);
-                $mysqli->query("INSERT INTO facet_values (`name_id`, `title`, `description`) VALUES ($name_id, '$value_safe', '$description_safe');");
-                if($mysqli->error){
-                    echo $mysqli->error;
-                    exit;
-                }
-                $value_id = $mysqli->insert_id;
-
-                return new Facet($value_id, $name, $value);
-
-            }else{
-                return null;
-            }
+        if(is_numeric($init_val)){
+            $sql = "SELECT * FROM facet_names WHERE id = $init_val;";
         }else{
-            $rows = $response->fetch_all(MYSQLI_ASSOC);
-            return new Facet($rows[0]['id'],$rows[0]['name'],$rows[0]['value']);
+            $title_safe = $mysqli->real_escape_string($init_val);
+            $sql = "SELECT * FROM facet_names WHERE title = '$title_safe';";
+        }
+
+        $response = $mysqli->query($sql);
+        $rows = $response->fetch_all(MYSQLI_ASSOC);
+        $response->close();
+
+        if(count($rows) == 0){
+            return null;
+        }else{
+            return new Facet($rows[0]['title'],$rows[0]['description'], $rows[0]['uri'],$rows[0]['id']);
         }
 
     }
 
+    public function save(){
 
+        global $mysqli;
 
+        $title_safe = $mysqli->real_escape_string($this->title);
+        $description_safe = $mysqli->real_escape_string($this->description);
+        $uri_safe = $mysqli->real_escape_string($this->uri);
 
-    /**
-     * Get the value of id
-     */ 
-    public function getId()
-    {
+        if($this->id){
+            // we already exist so update
+            $mysqli->query("UPDATE facet_names 
+                    SET 
+                    `title` = '$title_safe',
+                    `description` = '$description_safe',
+                    `uri` = '$uri_safe'
+                    WHERE
+                    `id` = {$this->id} ");
+        }else{
+            // we are creating
+            $mysqli->query("INSERT INTO facet_names 
+                    (`title`,`description`,`uri`)
+                    VALUES
+                    ('$title_safe','$description_safe','$uri_safe')");
+            $this->id = $mysqli->insert_id;
+        }
+
+        if($mysqli->error){
+            echo $mysqli->error;
+            exit;
+        }
+        
         return $this->id;
+        
     }
 
-    /**
-     * Get the value of name
-     */ 
-    public function getName()
-    {
-        return $this->name;
-    }
+    public function getId(){return $this->id;}
+    public function getTitle(){return $this->title;}
+    public function setTitle($title){$this->title = $title;}
+    public function getDescription(){return $this->description;}
+    public function setDescription($description){$this->description = $description;}
+    public function getUri(){return $this->uri;}
+    public function setUri($uri){$this->uri = $uri;}
 
-    /**
-     * Get the value of value
-     */ 
-    public function getValue()
-    {
-        return $this->value;
-    }
 }

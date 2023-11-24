@@ -12,8 +12,6 @@ echo "<p>{$fname['description']}</p>";
 
 ?>
 
-
-
 <h2>Facet Values</h2>
 <?php
     $response = $mysqli->query("SELECT * FROM facet_values WHERE name_id = $fname_id ORDER BY title");

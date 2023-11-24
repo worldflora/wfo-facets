@@ -5,7 +5,7 @@ require_once('header.php');
 $response = $mysqli->query("SELECT * FROM sources order by title");
 $sources = $response->fetch_all(MYSQLI_ASSOC);
 
-echo "<h2>Facet Values</h2>";
+echo "<h2>Sources</h2>";
 
     echo "<ul>";
     foreach($sources as $source){
