@@ -109,6 +109,25 @@ if($wfo_id){
 <div style="float: right; width: 49%; border-left: 1px gray solid; padding-left: 1em;">
     <h3>Facets in Index [<a href="update_index.php?wfo_id=<?php echo $wfo_id ?>">Update</a>]</h3>
     <p>These are the details in the index.</p>
+
+    <?php
+        $index = new SolrIndex();
+        $solr_doc = $index->getDoc($wfo_id);
+
+        foreach($solr_doc as $prop => $val){
+            if(preg_match('/^wfo_facet_/', $prop)){
+                echo "<h3>$prop</h3>";
+                echo "<ul>";
+                asort($solr_doc->{$prop});
+                foreach($solr_doc->{$prop} as $val){
+                    echo "<li>$val</li>";
+                }
+                echo "</ul>";
+            };
+        }
+
+
+    ?>
 </div>
 
 

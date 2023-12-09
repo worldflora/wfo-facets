@@ -25,7 +25,7 @@ if(@$_REQUEST['source_id']){
     $response = $mysqli->query("SELECT id FROM sources ORDER BY id LIMIT 1");
     $sources = $response->fetch_all(MYSQLI_ASSOC);
     $response->close();
-    $source_id = $sources['id'];
+    $source_id = $sources[0]['id'];
     $_SESSION['source_id'] = $source_id;
 }
 
