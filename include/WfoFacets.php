@@ -1,7 +1,6 @@
 <?php
 
 require_once('../config.php');
-require_once('../includes/SolrIndex.php');
 
 /**
  * A root class for the application
