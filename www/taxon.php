@@ -1,7 +1,8 @@
 <?php
 require_once('../config.php');
-require_once('header.php');
-require_once('../includes/SolrIndex.php');
+require_once('../include/SolrIndex.php');
+require_once('../include/WfoFacets.php');
+require_once('../include/WikiItem.php');
 
 $wfo_id = @$_GET['id'];
 
@@ -11,6 +12,7 @@ if(!$wfo_id && @$_SESSION['wfo_id']){
 }
 $_SESSION['wfo_id'] = $wfo_id;
 
+require_once('header.php');
 ?>
 <table style="width: auto; float: right; margin-top: 1em;">
     <tr>
@@ -44,7 +46,7 @@ if($wfo_id){
     $solr_doc = $index->getDoc($wfo_id);
 
     if($solr_doc){
-/*
+        /*
         echo "<pre>";
         print_r($solr_doc);
         echo "</pre>";
@@ -73,27 +75,30 @@ if($wfo_id){
 
     <?php
     // List of all the facets and values this one has
-    $response = $mysqli->query("SELECT * FROM facet_names order by title;");
+
+    $response = $mysqli->query("select q_number, label_en from wiki_cache where q_number in
+            (select distinct(facet_id) from facets)
+            order by label_en;");
     $facets = $response->fetch_all(MYSQLI_ASSOC);
     $response->close();
 
-    foreach($facets as $fname){
-        echo "<h4>{$fname['title']}&nbsp;[<a href=\"score.php?wfo_id={$wfo_id}&facet_name_id={$fname['id']}\" />score</a>]</h4>";
-
+    foreach($facets as $facet){
+        echo "<h4>{$facet['label_en']}&nbsp;[<a href=\"score.php?wfo_id={$wfo_id}&facet_id={$facet['q_number']}\" />score</a>]</h4>";
+  
         echo "<table style=\"width: 100%;\">";
-        echo "<tr><th>Title</th><th>Description</th><th># sources</th></tr>";
-        $sql = "SELECT fv.id, fv.title, fv.`description`, count(source_id) as source_count
-            FROM facet_values AS fv 
-            left JOIN wfo_scores as s on s.facet_value_id = fv.id and fv.name_id = {$fname['id']}
-            WHERE s.wfo_id = '$wfo_id'
-            group by fv.id, fv.title, fv.`description`
-            order by fv.title;";
+        echo "<tr><th>Label</th><th># sources</th></tr>";
+        $sql = "select s.value_id, count(s.source_id) as n
+                FROM wfo_scores AS s
+                JOIN facets as f on s.value_id = f.value_id and f.facet_id = {$facet['q_number']}
+                WHERE s.wfo_id = \"{$wfo_id}\" 
+                group by s.value_id;";
         $response = $mysqli->query($sql);
         $fvalues = $response->fetch_all(MYSQLI_ASSOC);
         $response->close();
         if($fvalues){
             foreach($fvalues as $fval){
-                 echo "<tr><td>{$fval['title']}</td><td>{$fval['description']}</td><td>{$fval['source_count']}</td></tr>";
+                 $item = WikiItem::getWikiItem($fval['value_id']);
+                 echo "<tr><td>{$item->getLabel()}</td><td>{$fval['n']}</td></tr>";
             }
         }else{
             echo "<tr><td>None scored.</td></tr>";
@@ -115,12 +120,16 @@ if($wfo_id){
         $solr_doc = $index->getDoc($wfo_id);
 
         foreach($solr_doc as $prop => $val){
-            if(preg_match('/^wfo_facet_/', $prop)){
-                echo "<h3>$prop</h3>";
+            $matches = array();
+            if(preg_match('/^wfo_facet_(Q[0-9]+)_ss$/', $prop, $matches)){
+                $facet_q = $matches[1];
+                $facet = WikiItem::getWikiItem($facet_q);
+                echo "<h3>{$facet->getLabel()} [$facet_q]</h3>";
                 echo "<ul>";
                 asort($solr_doc->{$prop});
-                foreach($solr_doc->{$prop} as $val){
-                    echo "<li>$val</li>";
+                foreach($solr_doc->{$prop} as $val_q){
+                    $val = WikiItem::getWikiItem($val_q);
+                    echo "<li>{$val->getLabel()} [$val_q]</li>";
                 }
                 echo "</ul>";
             };
@@ -184,9 +193,6 @@ document.getElementById("wfo_lookup_input").onkeyup = function(e) {
                     name; // pop the name object on the dom element so we can grab it later
                 select.appendChild(opt);
             });
-
-
-
 
             // if we haven't found anything then put a message in
             if (select.childNodes.length == 0) {

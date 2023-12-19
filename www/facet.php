@@ -1,33 +1,26 @@
 <?php
 require_once('../config.php');
+require_once('../include/WfoFacets.php');
+require_once('../include/WikiItem.php');
+
 require_once('header.php');
 
-$fname_id = $_GET['id'];
-$response = $mysqli->query("SELECT * FROM facet_names WHERE id = $fname_id");
-$facets = $response->fetch_all(MYSQLI_ASSOC);
-$fname = $facets[0];
+$facet = WikiItem::getWikiItem($_GET['id']);
 
-echo "<h2>Facet: {$fname['title']}</h2>";
-echo "<p>{$fname['description']}</p>";
+echo "<h2>Facet:{$facet->getLabel()}</h2>";
 
 ?>
 
 <h2>Facet Values</h2>
 <?php
-    $response = $mysqli->query("SELECT * FROM facet_values WHERE name_id = $fname_id ORDER BY title");
-    $facet_values = $response->fetch_all(MYSQLI_ASSOC);
-
+    $response = $mysqli->query("SELECT label_en FROM facets as fv JOIN wiki_cache as wc on fv.value_id = wc.q_number and fv.facet_id = {$_GET['id']} order by wc.label_en;");
+    $rows = $response->fetch_all(MYSQLI_ASSOC);
     echo "<ul>";
-    foreach($facet_values as $fvalue){
-        echo "<li><strong>{$fvalue['title']}</strong>: {$fvalue['description']}</li>";
-    }
+    foreach($rows as $row){
+        echo "<li><strong>{$row['label_en']}</strong> </li>";
+     }
     echo "</ul>";
 
-?>
-
-
-
-<?php
 
 require_once('footer.php');
 ?>

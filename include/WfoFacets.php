@@ -1,7 +1,7 @@
 <?php
 
 require_once('../config.php');
-
+require_once('../include/WfoFacets.php');
 /**
  * A root class for the application
  * 
@@ -78,24 +78,20 @@ class WfoFacets{
             echo "<hr/>";
             echo $wfo;
             
-
-            $sql = "SELECT fn.`title` as 'facet_name', fn.description as 'facet_description', fv.id as facet_value_id, fv.`title` as 'value_name',  fv.`description` as value_description, s.negated 
-                FROM 
-                wfo_facets.wfo_scores as s 
-                join wfo_facets.facet_values as fv on fv.id = s.facet_value_id
-                join wfo_facets.facet_names as fn on fn.id = fv.name_id
-                where s.wfo_id = '$wfo'";
+            $sql = "SELECT f.facet_id, f.value_id, s.negated 
+                from wfo_scores as s 
+                join facets as f on s.value_id = f.value_id 
+                where s.wfo_id = '$wfo';";
             $response = $mysqli->query($sql);
             $facets = $response->fetch_all(MYSQLI_ASSOC);
               
             foreach($facets as $facet){
                 if(!$facet['negated']){
                     // They have it
-                    $my_scores[$facet['facet_value_id']] = $facet;
-                    
+                    $my_scores[$facet['facet_id'] . '-' .$facet['value_id']] = $facet;
                 }else{
-                    // they don't have this facet
-                    unset($my_scores[$facet['facet_value_id']]);
+                    // they negate it
+                    unset($my_scores[$facet['facet_id'] . '-' .$facet['value_id']]);
                 }
 
             }
@@ -113,32 +109,37 @@ class WfoFacets{
         }
         unset($solr_doc->wfo_facets_t);
 
-        $facets_text = array(); // keep all the text associated with facets so we can free text search it
         foreach($my_scores as $score){
 
-
-            $facet_field_name = 'wfo_facet_' . $score['facet_name'] . '_ss';
+            $facet_field_name = 'wfo_facet_Q' . $score['facet_id'] . '_ss';
 
             // if we don't have this facet yet then add it.
             if(!isset($solr_doc->{$facet_field_name})){
                 $solr_doc->{$facet_field_name} = array();
-                $facets_text[] = $score['facet_name'];
-                $facets_text[] = $score['facet_description'];
             }
 
             // add the facet value
-            $solr_doc->{$facet_field_name}[] = $score['value_name'];
-            
-            // add value text field so we can find stuff with free text
-            $facets_text[] = $score['value_name'];
-            $facets_text[] = $score['value_description'];
-
+            $solr_doc->{$facet_field_name}[] = 'Q' . $score['value_id'];
         }
 
-        // for free text searching
+        // FIXME - add facets from synonyms..
+
+        // add in the text for the facets so that we can freetext search on it
+        $facets_text = array(); 
+        foreach($solr_doc as $prop => $val){
+            $matches = array();
+            if(preg_match('/^wfo_facet_(Q[0-9]+)_ss$/', $prop, $matches)){
+                $facet_q = $matches[1];
+                $facet = WikiItem::getWikiItem($facet_q);
+                $facets_text[] = $facet->getIntSearchText();
+                foreach($solr_doc->{$prop} as $val_q){
+                    $val = WikiItem::getWikiItem($val_q);
+                    $facets_text[] = $val->getIntSearchText();
+                }
+            };
+        }
+        // pop them all in the text field
         $solr_doc->wfo_facets_t = implode(' | ', $facets_text);
-
-
 
         $index->saveDoc($solr_doc);
 

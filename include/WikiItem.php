@@ -7,14 +7,12 @@ class WikiItem extends WfoFacets{
     // for working the singletons
     protected static $loaded = array();
     private int $id;
-    private string $label;
-    private object $data;
+    private object $labels;
+    private ?string $intSearchText;
 
-
-    private function __construct($q_number, $label, $data_json){
+    private function __construct($q_number, $labels){
         $this->id = $q_number;
-        $this->label = $label;
-        $this->data = json_decode($data_json);
+        $this->labels = $labels;
         self::$loaded[$q_number] = $this;
     }
 
@@ -39,7 +37,7 @@ class WikiItem extends WfoFacets{
 
             // we are not returning just what is in memory so 
             // we should look to get it from the db if we can
-            $response = $mysqli->query("SELECT * FROM wiki_cache WHERE q_number = $init_value");
+            $response = $mysqli->query("SELECT data_json->'$.entities.Q{$init_value}.labels' as labels FROM wiki_cache WHERE q_number = $init_value");
             if($response->num_rows){
                 $row = $response->fetch_assoc();
             }else{
@@ -48,7 +46,7 @@ class WikiItem extends WfoFacets{
 
             // we have it and they don't want to refresh it so just return it
             if(!$force_fetch && $row){
-                return new WikiItem($init_value, $row['label_en'], $row['data_json']);
+                return new WikiItem($init_value, json_decode($row['labels']));
             }
 
             // we got to here so we didn't find it in the db or they want to refresh the cache
@@ -94,7 +92,7 @@ class WikiItem extends WfoFacets{
                 throw new ErrorException($mysqli->error);
             }
 
-            return new WikiItem($init_value, $label, $json);
+            return new WikiItem($init_value, $data->entities->{$q}->labels);
 
         }
         
@@ -105,9 +103,33 @@ class WikiItem extends WfoFacets{
         return $this->id;
     }
 
-    public function getLabel(){
-        return $this->label;
+    public function getLabel($lang = 'en'){
+
+        // try and return in the language they ask for.
+        if(isset($this->labels->{$lang}->value)){
+            return $this->labels->{$lang}->value;
+        }else if(isset($this->labels->en->value)){
+            // if we don't have the language we return the English
+            return $this->labels->en->value;
+        }else{
+            // if we don't have any language we return q number
+            return 'Q' . $this->getId();
+        }
     }
+
+    public function getIntSearchText(){
+        $out = array();
+        foreach($this->labels as $label){
+            $out[] = $label->value;
+        }
+        return implode(' | ', $out);
+    }
+
+
+    public function getWikidataLink(){
+        return "https://www.wikidata.org/entity/Q" . $this->id;
+    }
+
 
 
 }// class
