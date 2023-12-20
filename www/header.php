@@ -81,7 +81,5 @@
         <a href="index.php">Facets</a>
         |
         <a href="taxon.php">Taxa</a>
-        |
-        <a href="sources.php">Sources</a>
     </div>
     <!-- end header.php -->

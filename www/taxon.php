@@ -52,9 +52,13 @@ if($wfo_id){
         echo "</pre>";
 */
         echo "<h2>{$solr_doc->full_name_string_html_s}</h2>";
-        echo "<p><strong>{$solr_doc->role_s}</strong> | <a href=\"https://list.worldfloraonline.org/{$solr_doc->id}\">{$wfo_id}</a></p>";
+        echo "<p><strong>{$solr_doc->role_s}</strong> | <a href=\"https://list.worldfloraonline.org/{$solr_doc->id}\">{$wfo_id}</a>";
 
-
+        if($solr_doc->role_s == 'synonym'){
+            $accepted_wfo = substr($solr_doc->accepted_id_s, 0, 14);
+            echo " of <a href=\"taxon.php?id=$accepted_wfo\">{$accepted_wfo} : $solr_doc->accepted_full_name_string_html_s</a>";
+        }
+        echo "</p>";
 
     }else{
         echo "<h2>Not Found</h2>";
@@ -112,27 +116,33 @@ if($wfo_id){
 </div>
 
 <div style="float: right; width: 49%; border-left: 1px gray solid; padding-left: 1em;">
-    <h3>Facets in Index [<a href="update_index.php?wfo_id=<?php echo $wfo_id ?>">Update</a>]</h3>
-    <p>These are the details in the index.</p>
 
     <?php
-        $index = new SolrIndex();
-        $solr_doc = $index->getDoc($wfo_id);
-
-        foreach($solr_doc as $prop => $val){
-            $matches = array();
-            if(preg_match('/^wfo_facet_(Q[0-9]+)_ss$/', $prop, $matches)){
-                $facet_q = $matches[1];
-                $facet = WikiItem::getWikiItem($facet_q);
-                echo "<h3>{$facet->getLabel()} [$facet_q]</h3>";
-                echo "<ul>";
-                asort($solr_doc->{$prop});
-                foreach($solr_doc->{$prop} as $val_q){
-                    $val = WikiItem::getWikiItem($val_q);
-                    echo "<li>{$val->getLabel()} [$val_q]</li>";
-                }
-                echo "</ul>";
-            };
+    echo "<h3>Facets in Index ";
+    if($solr_doc->role_s == 'accepted'){
+        echo "[<a href=\"update_index.php?wfo_id=$wfo_id\">Update</a>]";
+    }
+    echo "</h3>";
+    
+        if($solr_doc->role_s == 'accepted'){
+            echo "<p>These are the details in the index.</p>";
+            foreach($solr_doc as $prop => $val){
+                $matches = array();
+                if(preg_match('/^(Q[0-9]+)_ss$/', $prop, $matches)){
+                    $facet_q = $matches[1];
+                    $facet = WikiItem::getWikiItem($facet_q);
+                    echo "<h3>{$facet->getLabel()} [$facet_q]</h3>";
+                    echo "<ul>";
+                    asort($solr_doc->{$prop});
+                    foreach($solr_doc->{$prop} as $val_q){
+                        $val = WikiItem::getWikiItem($val_q);
+                        echo "<li>{$val->getLabel()} [$val_q]</li>";
+                    }
+                    echo "</ul>";
+                };
+            }
+        }else{
+            echo "We don't index names that are not accepted.";
         }
 
 

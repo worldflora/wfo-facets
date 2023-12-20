@@ -54,12 +54,12 @@ if(@$_POST){
         if($should_be_present && !$currently_present){
             $mysqli->query("INSERT INTO wfo_scores (wfo_id, value_id, source_id, negated) VALUES ('$wfo_id', {$fval['value_id']}, $source_id, $negated_int)");
         }elseif(!$should_be_present && $currently_present){
-            $mysqli->query("DELETE FROM wfo_scores WHERE id = {$current_values[0]['id']};");
+            $mysqli->query("DELETE FROM wfo_scores WHERE value_id = {$current_values[0]['value_id']} AND source_id = {$current_values[0]['source_id']} AND wfo_id = '{$current_values[0]['wfo_id']}'");
         }elseif($should_be_present && $currently_present){
             // it should be there and it is there
             // does it have the correct negation state?
             if($current_values[0]['negated'] != $negated_int){
-                $mysqli->query("UPDATE wfo_scores SET negated = $negated_int WHERE id = {$current_values[0]['id']};");
+                $mysqli->query("UPDATE wfo_scores SET negated = $negated_int WHERE value_id = {$current_values[0]['value_id']} AND source_id = {$current_values[0]['source_id']} AND wfo_id = '{$current_values[0]['wfo_id']}';");
             }
         }
 
@@ -79,7 +79,7 @@ if(@$_POST){
 // Get the facet values for display
 $response = $mysqli->query(
     "SELECT
-        f.value_id, wc.label_en, s.id, s.negated
+        f.value_id, wc.label_en, s.wfo_id, s.negated
     FROM 
         facets as f
     LEFT JOIN 
@@ -112,11 +112,11 @@ echo "<hr/>";
         echo "<td>{$value['label_en']}</td>";
 
         $negate_id = 'negate_' . $value['value_id'];        
-        $val_checked = $value['id'] ? 'checked' : '';
+        $val_checked = $value['wfo_id'] ? 'checked' : '';
         echo "<td style=\"text-align: center;\"><input {$val_checked} name=\"scored[]\" value=\"{$value['value_id']}\" type=\"checkbox\" onchange=\"scoreChanged({$value['value_id']}, this.checked)\"/></td>";
 
         $neg_checked = $value['negated'] ? 'checked' : '';
-        $neg_disabled = $value['id'] ? '' : 'disabled';
+        $neg_disabled = $value['wfo_id'] ? '' : 'disabled';
         echo "<td style=\"text-align: center;\"><input {$neg_checked} {$neg_disabled} id=\"$negate_id\" name=\"negated[]\" value=\"{$value['value_id']}\" type=\"checkbox\"/></td>";
         
         echo "</tr>";

@@ -30,9 +30,9 @@ require_once('header.php');
 
 ?>
 
-
+<h2>Unplaced Values</h2>
+<p>Here we will have a list of values that haven't been assigned to a facet.</p>
 
 <?php
-
-require_once('footer.php');
+    require_once('footer.php');
 ?>
