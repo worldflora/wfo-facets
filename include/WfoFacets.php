@@ -15,11 +15,15 @@ class WfoFacets{
      */
     public static function indexTaxon($wfo_id){
 
+
+        // FIXME NEXT
+        // this should also insert the reasoning for each facet placement.
+
         global $mysqli;
 
         $index = new SolrIndex();
 
-        // this gets the heirarchy from 
+        // this gets the heirarchy from graphql
         $graph_query = "{
             taxonNameById(nameId: \"$wfo_id\") {
                 id
@@ -49,12 +53,18 @@ class WfoFacets{
 
         $body = json_decode($response->body);
 
-        // check this is and accepted name.
-        // if not then refuse to index it
-        if($body->data->taxonNameById->currentPreferredUsage->hasName->id !=  $body->data->taxonNameById->id){
+        // if there is no current usage then it isn't placed
+        // and we return false - no indexing
+        if(!isset($body->data->taxonNameById->currentPreferredUsage) || !$body->data->taxonNameById->currentPreferredUsage ){
             return false;
-        }
+        }    
 
+
+        // check this is an accepted name.
+        // if not then index the accepted name or nothing
+        if($body->data->taxonNameById->currentPreferredUsage->hasName->id !=  $body->data->taxonNameById->id){
+            return WfoFacets::indexTaxon($body->data->taxonNameById->id);
+        }
         
         if($body->data->taxonNameById->currentPreferredUsage){
 
@@ -89,7 +99,7 @@ class WfoFacets{
             echo "<hr/>";
             echo $wfo;
             
-            $sql = "SELECT f.facet_id, f.value_id, s.negated 
+            $sql = "SELECT f.facet_id, f.value_id, s.negated, s.source_id 
                 from wfo_scores as s 
                 join facets as f on s.value_id = f.value_id 
                 where s.wfo_id = '$wfo';";
@@ -97,12 +107,24 @@ class WfoFacets{
             $facets = $response->fetch_all(MYSQLI_ASSOC);
               
             foreach($facets as $facet){
-                if(!$facet['negated']){
-                    // They have it
-                    $my_scores[$facet['facet_id'] . '-' .$facet['value_id']] = $facet;
+
+                $facet_value_id = $facet['facet_id'] . '-' . $facet['value_id'];
+
+                // the provenance tag is of the form  wfo-0000400164-Q47542613-1
+                // i.e. This taxon is said to have it by this source.
+                $provenance_tag = "{$wfo}-Q{$facet['source_id']}-" . ($facet['negated'] == 1 ? 'neg': 'add');
+
+                // Is it already recorded?
+                if(isset($my_scores[$facet_value_id])){
+                    // add the source as an extra
+                    $my_scores[$facet_value_id]['prov'][] = $provenance_tag;
+                    // update the negation status
+                    $my_scores[$facet_value_id]['negated'] = $facet['negated'];
                 }else{
-                    // they negate it
-                    unset($my_scores[$facet['facet_id'] . '-' .$facet['value_id']]);
+                    // setting it up for the first time so create the provenance array
+                    $facet['prov'] = array($provenance_tag);
+                    unset($facet['source_id']);
+                    $my_scores[$facet_value_id] = $facet;
                 }
 
             }
@@ -124,8 +146,21 @@ class WfoFacets{
                 // we just add the non-negated ones
                 // the negated ones are ignored
                 if(!$facet['negated']){
-                    // They have it
-                    $my_scores[$facet['facet_id'] . '-' .$facet['value_id']] = $facet;
+
+                    $facet_value_id = $facet['facet_id'] . '-' . $facet['value_id'];
+                    $provenance_tag = "{$syn->id}-Q{$facet['source_id']}-add"; // only add here
+
+                    // Is it already recorded?
+                    if(isset($my_scores[$facet_value_id])){
+                        // add the source as an extra
+                        $my_scores[$facet_value_id]['prov'][] = $provenance_tag;
+                    }else{
+                        // setting it up for the first time so create the provenance array
+                        $facet['prov'] = array($provenance_tag);
+                        unset($facet['source_id']);
+                        $my_scores[$facet_value_id] = $facet;
+                    }
+                    
                 }
             }
         }
@@ -137,20 +172,33 @@ class WfoFacets{
         // remove the existing facet properties
         foreach($solr_doc as $prop => $val){
             if(preg_match('/^Q[0-9]+_ss$/', $prop)) unset($solr_doc->{$prop}); // facet field
+            if(preg_match('/^Q[0-9]+_provenance_ss$/', $prop)) unset($solr_doc->{$prop}); // facet provenance field
             if(preg_match('/^Q[0-9]+_t$/', $prop)) unset($solr_doc->{$prop}); // text version
         }
 
         foreach($my_scores as $score){
 
             $facet_field_name = "Q{$score['facet_id']}_ss";
+            $facet_prov_field_name = "Q{$score['facet_id']}_provenance_ss";
 
             // if we don't have this facet yet then add it.
             if(!isset($solr_doc->{$facet_field_name})){
                 $solr_doc->{$facet_field_name} = array();
             }
 
-            // add the facet value
-            $solr_doc->{$facet_field_name}[] = 'Q' . $score['value_id'];
+            // add the facet value if it isn't negated
+            if(!$score['negated']){
+                $solr_doc->{$facet_field_name}[] = 'Q' . $score['value_id'];
+            }
+
+            // add it to the provenance field whether or not it is negated
+            // add the value Q id to the start. The provenance tag now goes;
+            // valueQ-nameWFO-sourceQ-add or valueQ-nameWFO-sourceQ-neg
+            foreach($score['prov'] as $prov){
+                $solr_doc->{$facet_prov_field_name}[] = "Q{$score['value_id']}-" . $prov;
+            }
+            
+            
         }
 
         // add in the text for the facets so that we can freetext search on it

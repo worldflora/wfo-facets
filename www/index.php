@@ -32,7 +32,32 @@ require_once('header.php');
 
 <h2>Unplaced Values</h2>
 <p>Here we will have a list of values that haven't been assigned to a facet.</p>
-
 <?php
+
+    $response = $mysqli->query("SELECT s.value_id, count(*) as n 
+        FROM wfo_scores as s 
+        left join facets as f on s.value_id = f.value_id
+        where f.value_id is null
+        group by s.value_id
+        order by n desc;");
+    $rows = $response->fetch_all(MYSQLI_ASSOC);
+
+    echo "<ul>";
+    foreach($rows as $row){
+        $value = WikiItem::getWikiItem($row['value_id']);
+        $count = $row['n'];
+        echo "
+            <form method=\"GET\" action=\"place_value.php\">
+            <li><a href=\"value.php?id={$value->getId()}\"/>{$value->getLabel()}</a> 
+            | Scores: {$count}
+            | <a target=\"wikidata\" href=\"{$value->getWikidataLink()}\">Wikidata</a>
+            | <input type=\"hidden\" name=\"value_id\" value=\"{$value->getId()}\" />
+              <input type=\"text\" name=\"facet_id\" placeholder=\"Facet Q number\" />
+              <input type=\"submit\" value=\"Set\" />
+            </li>
+            </form>";
+    }
+    echo "</ul>";
+
     require_once('footer.php');
 ?>

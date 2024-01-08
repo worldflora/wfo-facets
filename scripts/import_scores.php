@@ -4,17 +4,14 @@ require_once('../config.php');
 require_once('../include/WfoFacets.php');
 require_once('../include/WikiItem.php');
 
-
 echo "Import scores\n";
 
-
 if(count($argv) < 2){
-    echo "You must pass id of the SOURCE and the path of the csv file to import.\n";
+    echo "You must pass the path of the csv file to import.\n";
     exit;
 }
 
 $file_path = $argv[1];
-
 
 echo "Importing from: $file_path\n";
 

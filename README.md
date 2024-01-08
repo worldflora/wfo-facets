@@ -67,9 +67,9 @@ It is not necessary for facet values to have already been imported in order for 
 - Tropical = between the tropics 23.5 N and S
 
 ### Habitat
-- Forest
-- Grassland
-- Mountain
+- Forest Q4421
+- Grassland Q1006733
+- montane Q112229112
 - Deserts
 - Aquatic-freshwater
 - Aquatic-marine
