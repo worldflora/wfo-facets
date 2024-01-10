@@ -34,6 +34,7 @@ class SolrIndex{
         $docs = array($solr_doc);
         $solr_query_uri = SOLR_QUERY_URI . '/update?commit=true';
         $response = $this->curlPostJson($solr_query_uri, json_encode($docs));
+        return $response;
 
     }
 

@@ -8,11 +8,13 @@ class WikiItem extends WfoFacets{
     protected static $loaded = array();
     private int $id;
     private object $labels;
+    private object $descriptions;
     private ?string $intSearchText;
 
-    private function __construct($q_number, $labels){
+    private function __construct($q_number, $labels, $descriptions){
         $this->id = $q_number;
         $this->labels = $labels;
+        $this->descriptions = $descriptions;
         self::$loaded[$q_number] = $this;
     }
 
@@ -37,7 +39,10 @@ class WikiItem extends WfoFacets{
 
             // we are not returning just what is in memory so 
             // we should look to get it from the db if we can
-            $response = $mysqli->query("SELECT data_json->'$.entities.Q{$init_value}.labels' as labels FROM wiki_cache WHERE q_number = $init_value");
+            $response = $mysqli->query("SELECT 
+                data_json->'$.entities.Q{$init_value}.labels' as labels,
+                data_json->'$.entities.Q{$init_value}.descriptions' as descriptions
+                FROM wiki_cache WHERE q_number = $init_value");
             if($response->num_rows){
                 $row = $response->fetch_assoc();
             }else{
@@ -46,7 +51,7 @@ class WikiItem extends WfoFacets{
 
             // we have it and they don't want to refresh it so just return it
             if(!$force_fetch && $row){
-                return new WikiItem($init_value, json_decode($row['labels']));
+                return new WikiItem($init_value, json_decode($row['labels']), json_decode($row['descriptions']));
             }
 
             // we got to here so we didn't find it in the db or they want to refresh the cache
@@ -92,7 +97,7 @@ class WikiItem extends WfoFacets{
                 throw new ErrorException($mysqli->error);
             }
 
-            return new WikiItem($init_value, $data->entities->{$q}->labels);
+            return new WikiItem($init_value, $data->entities->{$q}->labels, $data->entities->{$q}->descriptions);
 
         }
         
@@ -101,6 +106,10 @@ class WikiItem extends WfoFacets{
 
     public function getId(){
         return $this->id;
+    }
+
+    public function getQNumber(){
+        return 'Q' . $this->id;
     }
 
     public function getLabel($lang = 'en'){
@@ -113,8 +122,46 @@ class WikiItem extends WfoFacets{
             return $this->labels->en->value;
         }else{
             // if we don't have any language we return q number
-            return 'Q' . $this->getId();
+            return $this->getQNumber();
         }
+    }
+
+    /**
+     * Return all the labels as a nice array by language
+     * 
+     */
+    public function getLabels(){
+
+        $label_list = array();
+        foreach($this->labels as $l){
+            $label_list[$l->language] = $l->value; 
+        }
+        return $label_list;
+        
+    }
+
+    public function getDescription($lang = 'en'){
+
+        // try and return in the language they ask for.
+        if(isset($this->descriptions->{$lang}->value)){
+            return $this->descriptions->{$lang}->value;
+        }else if(isset($this->descriptions->en->value)){
+            // if we don't have the language we return the English
+            return $this->descriptions->en->value;
+        }else{
+            // if we don't have any language we return q number
+            return $this->getQNumber();
+        }
+    }
+
+    public function getDescriptions(){
+
+        $d_list = array();
+        foreach($this->descriptions as $d){
+            $d_list[$d->language] = $d->value; 
+        }
+        return $d_list;
+        
     }
 
     public function getIntSearchText(){
@@ -131,5 +178,13 @@ class WikiItem extends WfoFacets{
     }
 
 
+    /**
+     * Will destroy references to loaded objects
+     * Useful when processing big lists as all taxa and names are maintained in memory unless they are actively forgotten
+     * Dangerous if you are doing object comparisons because objects with the same id might be different instances.
+     */
+    public static function resetSingletons(){
+        self::$loaded = array();
+    }
 
 }// class

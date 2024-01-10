@@ -12,12 +12,13 @@ class WfoFacets{
     /**
      * Does the full monty to index a taxon
      * taking care of the hierarchy and negation
+     * 
+     * @param since unix timestamp. Will only index 
+     * documents older than this if supplied.
+     * This is needed to stop a taxon being indexed for
+     * everyone one of its synonyms.
      */
-    public static function indexTaxon($wfo_id){
-
-
-        // FIXME NEXT
-        // this should also insert the reasoning for each facet placement.
+    public static function indexTaxon($wfo_id, $since = false){
 
         global $mysqli;
 
@@ -59,11 +60,10 @@ class WfoFacets{
             return false;
         }    
 
-
         // check this is an accepted name.
         // if not then index the accepted name or nothing
         if($body->data->taxonNameById->currentPreferredUsage->hasName->id !=  $body->data->taxonNameById->id){
-            return WfoFacets::indexTaxon($body->data->taxonNameById->id);
+            return WfoFacets::indexTaxon($body->data->taxonNameById->currentPreferredUsage->hasName->id);
         }
         
         if($body->data->taxonNameById->currentPreferredUsage){
@@ -92,13 +92,20 @@ class WfoFacets{
         }
         // now we have all the names/taxa in order from top to bottom
 
+        // get the solr document to see if it actually needs updating
+        $index = new SolrIndex();
+        $solr_doc = $index->getDoc($wfo_id);
+
+        // if we have set a start time and there is one in the solr doc and the 
+        // solr doc is newer than the start time then don't index it - we've just done it!
+        if($since && isset($solr_doc->facets_last_indexed_i) && $solr_doc->facets_last_indexed_i > $since){
+            return true;
+        }
+
         // get the scoring for each one and add or remove it as required.
         $my_scores = array();
         foreach($path_wfos as $wfo){
 
-            echo "<hr/>";
-            echo $wfo;
-            
             $sql = "SELECT f.facet_id, f.value_id, s.negated, s.source_id 
                 from wfo_scores as s 
                 join facets as f on s.value_id = f.value_id 
@@ -135,7 +142,7 @@ class WfoFacets{
         $synonyms = $body->data->taxonNameById->currentPreferredUsage->hasSynonym;
         foreach ($synonyms as $syn) {
             
-            $sql = "SELECT f.facet_id, f.value_id, s.negated 
+            $sql = "SELECT f.facet_id, f.value_id, s.negated, s.source_id  
                     from wfo_scores as s 
                     join facets as f on s.value_id = f.value_id 
                     where s.wfo_id = '{$syn->id}';";
@@ -166,8 +173,6 @@ class WfoFacets{
         }
 
         // now we need to actually update the index
-        $index = new SolrIndex();
-        $solr_doc = $index->getDoc($wfo_id);
 
         // remove the existing facet properties
         foreach($solr_doc as $prop => $val){
@@ -218,6 +223,8 @@ class WfoFacets{
                 $solr_doc->{$facet_text_field_name} = implode(' | ', $facets_text);
             };// a facet property
         }// each property in solr doc
+
+        $solr_doc->facets_last_indexed_i = time();
 
         $index->saveDoc($solr_doc);
 
