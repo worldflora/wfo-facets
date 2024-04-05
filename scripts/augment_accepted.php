@@ -23,6 +23,7 @@ while(true){
     // get a page worth of accepted taxa
     $filters = array();
     $filters[] = 'classification_id_s:' . WFO_DEFAULT_VERSION;
+    //$filters[] = 'rank_s:genus';
 
     $query = array(
         'query' => 'role_s:accepted',
@@ -49,27 +50,62 @@ while(true){
         
         echo "{$docs[$i]->id}\t";
 
-        $docs[$i]->all_names_alpha_ss = array();
-        $docs[$i]->all_names_alpha_ss[] = $docs[$i]->full_name_string_alpha_s; // include self
+        $docs[$i]->all_names_ss = array();
+        $docs[$i]->deprecated_names_ss = array();
+        $docs[$i]->unplaced_names_ss = array('banana');
+
+
+        $docs[$i]->all_names_ss[] = $docs[$i]->full_name_string_plain_s; // include self
         unset($docs[$i]->_version_);
 
         // get the synonyms for the taxon
         $query = array(
             'query' => "role_s:synonym AND accepted_id_s:{$docs[$i]->id}",
             'sort' => 'id asc',
-            'fields' => array('full_name_string_alpha_s'),
+            'fields' => array('full_name_string_plain_s'),
             'limit' => 1000 // shouldn't have more than this!
         );
 
         $syn_docs = $index->getSolrDocs($query);
 
         echo count($syn_docs);
-        echo "\n";
+        echo "\t";
 
         // add them to the accepted 
         foreach($syn_docs as $syn_doc){
-            $docs[$i]->all_names_alpha_ss[] = $syn_doc->full_name_string_alpha_s;
+            $docs[$i]->all_names_ss[] = $syn_doc->full_name_string_plain_s;
         }
+
+        // if this is a genus we add the unplaced names with this genus name
+        if($docs[$i]->rank_s == 'genus'){
+
+            echo "genus\t";
+            
+            $genus_name = $docs[$i]->name_string_s;
+
+            $query = array(
+                'query' => "(role_s:unplaced OR role_s:deprecated) AND genus_string_s:{$genus_name}",
+                'sort' => 'id asc',
+                'fields' => array('full_name_string_plain_s', 'role_s'),
+                'limit' => 10000 // shouldn't have more than this!
+            );
+
+            $extra_docs = $index->getSolrDocs($query);
+
+            // add them to the accepted 
+            foreach($extra_docs as $doc){
+                if($doc->role_s == 'deprecated'){
+                    $docs[$i]->deprecated_names_ss[] = $doc->full_name_string_plain_s;
+                }else{
+                    $docs[$i]->unplaced_names_ss[] = $doc->full_name_string_plain_s;
+                }
+            }
+            echo count($docs[$i]->unplaced_names_ss);
+            echo "\t";
+            echo count($docs[$i]->deprecated_names_ss);
+
+        }
+        echo "\n";
 
     }
 
@@ -78,7 +114,5 @@ while(true){
     echo "---- saving page ... \t";
     $index->saveDocs($docs);
     echo "done\n";
-
-    // do the next page.
 
 }

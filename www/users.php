@@ -1,42 +1,31 @@
 <?php
     require_once('header.php');
+
+    if(!$user){
+        echo '<div class="alert alert-danger" role="alert">You do not have permission to access this resource.</div>';
+        require_once('footer.php');
+        exit;
+    }
+
 ?>
-
-
-<h1>Sources</h1>
-
+<h1>Users</h1>
 <p class="lead">
-    Here is a list of all the sources we have...
+    These are the users registered with the system.
 </p>
-
 <ul class="list-group">
     <?php
-    $response = $mysqli->query("SELECT * FROM `sources` ORDER BY `name`;");
-    $sources = $response->fetch_all(MYSQLI_ASSOC);
-    $response->close();
-
-    foreach($sources as $s){
-
-        // load up the facet value we are looking at
-        $response = $mysqli->query("SELECT f.id as facet_id, fv.id as facet_value_id, f.name as facet_name, fv.name as facet_value_name FROM facet_values as fv JOIN facets as f on fv.facet_id = f.id WHERE fv.id = {$s['facet_value_id']}");
-        $facet_value = $response->fetch_assoc();
-        $response->close();
-
+    $response = $mysqli->query("SELECT * FROM `users` ORDER BY `username`;");
+    while($u = $response->fetch_assoc()){
         echo '<li class="list-group-item">';
         echo '<div class="row">';
         
         echo '<div class="col">';
-        echo "<a href=\"source.php?source_id={$s['id']}\"><h3>{$s['name']}</h3></a>";
-        echo "<p><strong>Source for:</strong> <a href=\"facet_values.php?facet_id={$facet_value['facet_id']}\">{$facet_value['facet_name']}: {$facet_value['facet_value_name']}</a></p>";
-        echo "<p>";
-        echo $s['description'];
-        echo "</p>";
+        echo "<strong>{$u['username']}</strong> ({$u['role']}) ";
         echo '</div>'; // end of col
 
         // if they are god then show the edit buttons
         
         echo '<div class="col" style="text-align: right;">';
-        /*
         if($user['role'] == 'god'){
             if($u['role'] == 'editor'){
                     echo '<a class="btn btn-sm btn-outline-secondary" href="user_set_role.php?role=god&user_id='. $u['id'] .'" role="button">Make god</a>';
@@ -46,21 +35,23 @@
             echo '&nbsp;<a class="btn btn-sm btn-outline-secondary" href="user_password_reset.php?username='.$u['username'].'&user_id='. $u['id'] .'" role="button">Reset password</a>';
             echo '&nbsp;<a class="btn btn-sm btn-outline-danger" href="user_delete.php?user_id='. $u['id'] .'" role="button">Delete</a>';
         }
-        */
         echo '</div>'; // end of col
         echo '</div>'; // end of row
         echo '</li>';
     }
     
     // can add a new user if god
-    if($user && $user['role'] == 'god'){
+    if($user['role'] == 'god'){
         echo '<li class="list-group-item" style="text-align: right;">';
-        echo 'Create a new source via the facet value the source will be based on.';
+        echo '<a class="btn btn-sm btn-success" href="user_create.php" role="button">Add user</a>';
         echo '</li>';
     } // is god
 ?>
 </ul>
-
 <?php
+
+    if($user && $user['role'] == 'god'){
+
+    }
     require_once('footer.php');
 ?>

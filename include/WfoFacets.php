@@ -18,7 +18,7 @@ class WfoFacets{
      * This is needed to stop a taxon being indexed for
      * everyone one of its synonyms.
      */
-    public static function indexTaxon($wfo_id, $since = false){
+    public static function indexTaxon($wfo_id, $since = false, $commit = true){
 
         global $mysqli;
 
@@ -93,7 +93,6 @@ class WfoFacets{
         // now we have all the names/taxa in order from top to bottom
 
         // get the solr document to see if it actually needs updating
-        $index = new SolrIndex();
         $solr_doc = $index->getDoc($wfo_id);
 
         // if we have set a start time and there is one in the solr doc and the 
@@ -226,7 +225,7 @@ class WfoFacets{
 
         $solr_doc->facets_last_indexed_i = time();
 
-        $index->saveDoc($solr_doc);
+        $index->saveDoc($solr_doc, $commit);
 
         return true;
 

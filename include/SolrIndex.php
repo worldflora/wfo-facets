@@ -29,9 +29,9 @@ class SolrIndex{
     }
 
 
-    public function saveDocs($solr_docs){
+    public function saveDocs($solr_docs, $commit = true){
 
-        $solr_query_uri = SOLR_QUERY_URI . '/update?commit=true';
+        $solr_query_uri = SOLR_QUERY_URI . '/update?commit='. ($commit ? 'true': 'false');
         $response = $this->curlPostJson($solr_query_uri, json_encode($solr_docs));
         return $response;
 
@@ -59,7 +59,13 @@ class SolrIndex{
     public  function getSolrResponse($query){
         $solr_query_uri = SOLR_QUERY_URI . '/query';
         $response = $this->curlPostJson($solr_query_uri, json_encode($query));
-        $data = json_decode($response->body);
+        if(isset($response->body)){
+            $data = json_decode($response->body);
+        }else{
+            echo "No body when one expected.";
+            print_r($response);
+            exit;
+        }
         return $data;
     }
 
