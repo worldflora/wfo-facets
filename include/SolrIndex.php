@@ -29,6 +29,14 @@ class SolrIndex{
     }
 
 
+    public function saveDocs($solr_docs){
+
+        $solr_query_uri = SOLR_QUERY_URI . '/update?commit=true';
+        $response = $this->curlPostJson($solr_query_uri, json_encode($solr_docs));
+        return $response;
+
+    }
+
     public function saveDoc($solr_doc){
 
         $docs = array($solr_doc);
@@ -45,7 +53,7 @@ class SolrIndex{
     public function getSolrDocs($query){
         $data = $this->getSolrResponse($query);
         if(isset($data->response->docs)) return $data->response->docs;
-        else return null;
+        else return $data;
     }
 
     public  function getSolrResponse($query){
