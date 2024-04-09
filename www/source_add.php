@@ -27,29 +27,6 @@ $search = @$_REQUEST['search'];
 
 
 <script>
-const graphQlUri = "https://list.worldfloraonline.org/gql.php";
-
-function runGraphQuery(query, variables, giveBack) {
-
-    const payload = {
-        'query': query,
-        'variables': variables
-    }
-
-    var options = {
-        'method': 'POST',
-        'contentType': 'application/json',
-        'headers': {},
-        'body': JSON.stringify(payload)
-    };
-
-    const response = fetch(graphQlUri, options)
-        .then((response) => response.json())
-        .then((data) => giveBack(data));
-
-    return;
-}
-
 // define the GraphQL query string ahead of times
 let lookup_query =
     `query NameSearch($terms: String!){

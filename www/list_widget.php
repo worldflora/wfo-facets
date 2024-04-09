@@ -3,6 +3,7 @@
 // controls to add or removed item from list
 
 require_once('../config.php');
+require_once('../include/NameCache.php');
 
 // create a user object for use all over
 $user = @$_SESSION['user'] ? $_SESSION['user'] : null;
@@ -47,7 +48,7 @@ if($can_edit && $toggle){
         $present = false;
     }else{
         $mysqli->query("INSERT INTO wfo_scores (wfo_id, source_id, value_id) VALUES ('$wfo', $source_id, $value_id)");
-        echo $mysqli->error;
+        NameCache::cacheName($wfo);
         $present = true;
     }
 

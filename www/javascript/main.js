@@ -1,3 +1,65 @@
+const graphQlUri = "https://list.worldfloraonline.org/gql.php";
+
+function runGraphQuery(query, variables, giveBack) {
+
+    const payload = {
+        'query': query,
+        'variables': variables
+    }
+
+    var options = {
+        'method': 'POST',
+        'contentType': 'application/json',
+        'headers': {},
+        'body': JSON.stringify(payload)
+    };
+
+    const response = fetch(graphQlUri, options)
+        .then((response) => response.json())
+        .then((data) => giveBack(data));
+
+    return;
+}
+
+
+function replaceNameListItem(wfo, source_id, value_id, editable) {
+
+    // fetch a name for the wfo first
+    let get_query =
+        `query NameFetch($id: String!){
+                    taxonNameById(nameId: $id){
+                        id
+                        stableUri
+                        fullNameStringPlain
+                        fullNameStringHtml
+                        nomenclaturalStatus
+                        role
+                        rank
+                        currentPreferredUsage {
+                            pathString
+                            hasName {
+                                id
+                                stableUri
+                                fullNameStringHtml
+                            }
+                        }
+                    }
+                }`;
+
+    runGraphQuery(get_query, {
+        id: wfo
+    }, (response) => {
+
+        console.log(response);
+        let name = response.data.taxonNameById;
+        let li = getNameListItem(name, source_id, value_id, editable = true);
+        let old_li = document.getElementById(wfo);
+        old_li.replaceWith(li);
+
+    });
+
+
+}
 
 /**
  * Returns a Dom Node of a list item
