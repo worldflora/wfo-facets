@@ -26,40 +26,72 @@
     echo "<p><a href=\"facet_values.php?facet_id={$facet_value['facet_id']}\">{$facet_value['facet_name']}: {$facet_value['facet_value_name']}</a>.</p>";
     echo "<p class=\"lead\">{$source['description']}</p>";
 
+    // write out the select tab 
+    /*
+    searchvar triggerEl = document.querySelector('#myTab a[href="#profile"]')
+    bootstrap.Tab.getInstance(triggerEl).show() // Select tab by name
+    */
 
 ?>
 
+<ul class="nav nav-tabs" id="myTab" role="tablist" style="margin-bottom: 1em;">
 
-
-
-<ul class="nav nav-tabs" id="myTab" role="tablist">
     <li class="nav-item" role="presentation">
         <button class="nav-link active" id="list-tab" data-bs-toggle="tab" data-bs-target="#list" type="button"
-            role="tab" aria-controls="list" aria-selected="true">List</button>
+            role="tab">List</button>
     </li>
     <li class="nav-item" role="presentation">
-        <button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button"
-            role="tab" aria-controls="profile" aria-selected="false">Profile</button>
+        <button class="nav-link" id="add-tab" data-bs-toggle="tab" data-bs-target="#add" type="button"
+            role="tab">Add</button>
     </li>
     <li class="nav-item" role="presentation">
-        <button class="nav-link" id="contact-tab" data-bs-toggle="tab" data-bs-target="#contact" type="button"
-            role="tab" aria-controls="contact" aria-selected="false">Contact</button>
+        <button class="nav-link" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload" type="button"
+            role="tab">Upload</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="download-tab" data-bs-toggle="tab" data-bs-target="#download" type="button"
+            role="tab">Download</button>
     </li>
 </ul>
-<div class="tab-content" id="myTabContent">
-    <div class="tab-pane fade show active" id="list" role="tabpanel" aria-labelledby="list-tab">
-        <p>&nbsp;</p>
-        <p class="lead">
-            This displays the list - perhaps with a filter box.
-        </p>
-    </div>
-    <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">asfdsad</div>
-    <div class="tab-pane fade" id="contact" role="tabpanel" aria-labelledby="contact-tab">w234542345</div>
-</div>
 
+
+<div class="tab-content" id="myTabContent">
+
+    <!-- LIST DISPLAY -->
+    <div class="tab-pane fade show active" id="list" role="tabpanel" aria-labelledby="list-tab">
+        <?php require_once('source_list.php'); ?>
+    </div>
+
+    <!-- ADD SINGLE -->
+    <div class=" tab-pane fade" id="add" role="tabpanel" aria-labelledby="profile-tab">
+        <?php require_once('source_add.php'); ?>
+    </div>
+
+    <!-- UPLOAD -->
+    <div class="tab-pane fade" id="upload" role="tabpanel" aria-labelledby="contact-tab">
+        <?php require_once('source_upload.php'); ?>
+    </div>
+
+    <!-- DOWNLOAD -->
+    <div class="tab-pane fade" id="download" role="tabpanel" aria-labelledby="contact-tab">
+        <?php require_once('source_download.php'); ?>
+    </div>
+
+</div>
 
 
 
 <?php
     require_once('footer.php');
 ?>
+
+<script>
+<?php
+    // we need to be able to display a particular tab.
+    if(@$_REQUEST['tab']){
+        echo "var someTabTriggerEl = document.querySelector('#{$_REQUEST['tab']}');\n";
+        echo "var tab = new bootstrap.Tab(someTabTriggerEl);\n";
+        echo "tab.show();\n";
+    }
+?>
+</script>
