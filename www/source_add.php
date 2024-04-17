@@ -9,14 +9,10 @@ $search = @$_REQUEST['search'];
 
 
 <form method="POST" action="source_add.php">
-
     <div class="mb-3">
         <input type="txt" class="form-control" id="search" name="search" value="<?php echo $search ?>"
             placeholder="Type the first few letters of the plant name for suggestions" />
     </div>
-
-
-
 </form>
 
 <ul class="list-group" id="search_results">

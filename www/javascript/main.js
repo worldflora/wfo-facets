@@ -50,7 +50,6 @@ function replaceNameListItem(wfo, source_id, value_id, editable) {
         id: wfo
     }, (response) => {
 
-        console.log(response);
         let name = response.data.taxonNameById;
         let li = getNameListItem(name, source_id, value_id, editable = true);
         let old_li = document.getElementById(wfo);
@@ -77,19 +76,20 @@ function getNameListItem(name, source_id, value_id, editable = false) {
         const col_right = document.createElement("div");
         li.appendChild(col_right);
         col_right.style.float = 'right';
+        col_right.style.textAlign = 'right';
+        col_right.style.maxWidth = '20%';
         col_right.innerHTML = "loading...";
 
         fetch(`list_widget.php?wfo=${name.id}&source_id=${source_id}&value_id=${value_id}`)
             .then(x => x.text())
             .then(y => col_right.innerHTML = y);
-
-
     }
-
 
     // plant details
     const col_left = document.createElement("div");
     li.appendChild(col_left);
+    col_left.style.maxWidth = '80%';
+    col_left.overflowX = 'hidden';
 
     const p = document.createElement("p");
     col_left.appendChild(p);

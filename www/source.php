@@ -40,6 +40,9 @@
         <button class="nav-link active" id="list-tab" data-bs-toggle="tab" data-bs-target="#list" type="button"
             role="tab">List</button>
     </li>
+    <?php
+     if(Authorisation::canEditSourceData($source_id)){
+?>
     <li class="nav-item" role="presentation">
         <button class="nav-link" id="add-tab" data-bs-toggle="tab" data-bs-target="#add" type="button"
             role="tab">Add</button>
@@ -49,9 +52,26 @@
             role="tab">Upload</button>
     </li>
     <li class="nav-item" role="presentation">
+        <button class="nav-link" id="harvest-tab" data-bs-toggle="tab" data-bs-target="#harvest" type="button"
+            role="tab">Harvest</button>
+    </li>
+    <?php
+     } // can edit
+?>
+    <li class="nav-item" role="presentation">
         <button class="nav-link" id="download-tab" data-bs-toggle="tab" data-bs-target="#download" type="button"
             role="tab">Download</button>
     </li>
+    <?php
+     if(Authorisation::isGod()){
+?>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button"
+            role="tab">Users</button>
+    </li>
+    <?php
+     } // is god
+?>
 </ul>
 
 
@@ -61,22 +81,42 @@
     <div class="tab-pane fade show active" id="list" role="tabpanel" aria-labelledby="list-tab">
         <?php require_once('source_list.php'); ?>
     </div>
-
+    <?php
+     if(Authorisation::canEditSourceData($source_id)){
+?>
     <!-- ADD SINGLE -->
-    <div class=" tab-pane fade" id="add" role="tabpanel" aria-labelledby="profile-tab">
+    <div class=" tab-pane fade" id="add" role="tabpanel">
         <?php require_once('source_add.php'); ?>
     </div>
 
     <!-- UPLOAD -->
-    <div class="tab-pane fade" id="upload" role="tabpanel" aria-labelledby="contact-tab">
+    <div class="tab-pane fade" id="upload" role="tabpanel">
         <?php require_once('source_upload.php'); ?>
     </div>
 
+    <!-- HARVEST -->
+    <div class="tab-pane fade" id="harvest" role="tabpanel">
+        <?php require_once('source_harvest.php'); ?>
+    </div>
+
+    <?php
+     } // can edit
+?>
     <!-- DOWNLOAD -->
-    <div class="tab-pane fade" id="download" role="tabpanel" aria-labelledby="contact-tab">
+    <div class="tab-pane fade" id="download" role="tabpanel">
         <?php require_once('source_download.php'); ?>
     </div>
 
+    <?php
+     if(Authorisation::isGod()){
+?>
+    <!-- USERS -->
+    <div class="tab-pane fade" id="users" role="tabpanel">
+        <?php require_once('source_users.php'); ?>
+    </div>
+    <?php
+     } // is god
+?>
 </div>
 
 

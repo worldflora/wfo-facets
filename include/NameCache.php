@@ -11,7 +11,9 @@ class NameCache{
 
         // is it present in the cache
         $response = $mysqli->query("SELECT * FROM name_cache WHERE wfo_id = '$wfo_id';");
-        if($response->num_rows < 1){
+        if($response->num_rows > 0){
+            return true;
+        }else{
             // we don't have it so we need to call to get it
 
             $graph_ql_query = '
@@ -41,11 +43,14 @@ class NameCache{
 
             $result = json_decode($result);
 
-            $name = $result->data->taxonNameById->fullNameStringPlain;
-
-            $name_safe = $mysqli->real_escape_string($name);
-            $mysqli->query("INSERT INTO name_cache (`wfo_id`, `name`) VALUES ('$wfo_id', '$name_safe');");
-
+            if(isset($result->data->taxonNameById)){
+                $name = $result->data->taxonNameById->fullNameStringPlain;
+                $name_safe = $mysqli->real_escape_string($name);
+                $mysqli->query("INSERT INTO name_cache (`wfo_id`, `name`) VALUES ('$wfo_id', '$name_safe');");
+                return true;
+            }else{
+                return false;
+            }
         }
 
     }

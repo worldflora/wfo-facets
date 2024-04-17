@@ -1,6 +1,7 @@
 <!doctype html>
 <?php
     require_once('../config.php');
+    require_once('../include/Authorisation.php');
 
     // create a user object for use all over
     $user = @$_SESSION['user'] ? $_SESSION['user'] : null;
@@ -31,17 +32,13 @@
 
     <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="#">WFO Facets</a>
+            <a class="navbar-brand" href="index.php">WFO Facets</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse"
                 aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarCollapse">
                 <ul class="navbar-nav me-auto mb-2 mb-md-0">
-                    <li class="nav-item">
-                        <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active': '';  ?>"
-                            aria-current="page" href="index.php">Home</a>
-                    </li>
                     <li class="nav-item">
                         <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'facets.php' ? 'active': '';  ?>"
                             aria-current="page" href="facets.php">Facets</a>
@@ -50,9 +47,13 @@
                         <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'sources.php' ? 'active': '';  ?> "
                             href="sources.php">Sources</a>
                     </li>
+                    <?php 
+                        if($user){
+                            ?>
                     <li class="nav-item">
                         <a class="nav-link <?php echo $user ? '' : 'disabled'; ?>" href="users.php">Users</a>
                     </li>
+                    <?php } ?>
                 </ul>
                 <form class="d-flex">
                     <?php 
