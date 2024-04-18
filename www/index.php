@@ -23,9 +23,6 @@
     </dd>
     <dt>Facet Value</dt>
     <dd>A form that a facet takes, the equivalent of a character state e.g. "Tree" for lifeform.</dd>
-    <dt>Slug</dt>
-    <dd>A short, human friendly code to represent a facet value in data files. e.g. "lf:tree" for "Life Form, Tree".
-        Slugs are unique.</dd>
     <dt>Source</dt>
     <dd>The service does not contain original information but collates it from multiple sources.
         Each source is a simple list of WFO IDs mapped to a facet value. The source also specifies the provenance
@@ -40,7 +37,7 @@
 </p>
 
 <p>
-    <sup>*</sup> We use facet and facet value in preference to the character and character state terms because there is
+    <sup>*</sup> We use facet and facet value in preference to character and character state because there is
     no intention to build an identification system. This is purely about information retrieval and presentation.
 </p>
 

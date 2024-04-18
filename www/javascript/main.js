@@ -141,3 +141,13 @@ function toggleListMembership(node, wfo, source_id, value_id) {
         .then(y => node.innerHTML = y);
 
 }
+
+function callProgressBar(div) {
+    fetch("source_upload_progress.php")
+        .then((response) => response.json())
+        .then((json) => {
+            div.innerHTML =
+                `<div class="alert alert-${json.level}" role="alert">${json.message}</div>`;
+            if (!json.complete) callProgressBar(div);
+        });
+}

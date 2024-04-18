@@ -69,7 +69,7 @@
 
     <div class="mb-3">
         <label for="link_uri" class="form-label">Link URL</label>
-        <input type="txt" class="form-control" id="link_uri" name="link_uri" aria-describedby="link_uri_help"
+        <input type="url" class="form-control" id="link_uri" name="link_uri" aria-describedby="link_uri_help"
             value="<?php echo $link_uri ?>" />
         <div id="link_uri_help" class="form-text">A link to more information about the source.</div>
     </div>

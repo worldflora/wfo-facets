@@ -4,6 +4,7 @@ require_once('../include/Importer.php');
 
 
 // the upload on the source page
+$render_upload_progress = false;
 if($_POST && isset($_FILES["input_file"]) && Authorisation::canEditSourceData($source_id) && $_FILES["input_file"]["type"] == 'text/csv'){
 
     // we save the file by the user id and source.
@@ -17,6 +18,7 @@ if($_POST && isset($_FILES["input_file"]) && Authorisation::canEditSourceData($s
     // these things in ajax calls.
     $importer = new Importer($input_file_path, isset($_POST["overwrite_checkbox"]) ? true : false, $source_id, $facet_value);
     $_SESSION['importer'] = serialize($importer);
+    $render_upload_progress = true;
 
 }else{
     unset($_SESSION['importer']);
@@ -52,7 +54,7 @@ if($_POST && isset($_FILES["input_file"]) && Authorisation::canEditSourceData($s
 <?php
 
     if(Authorisation::canEditSourceData($source_id)){
-        if($importer){
+        if($render_upload_progress){
 ?>
 <div id="upload_progress_bar">
     <div class="alert alert-warning" role="alert"><strong>Uploading ... </strong></div>
@@ -62,18 +64,8 @@ if($_POST && isset($_FILES["input_file"]) && Authorisation::canEditSourceData($s
 </div>
 <script>
 // call the progress bar every second till it is complete
-const div = document.getElementById('upload_progress_bar');
-
-function callProgressBar() {
-    fetch("source_upload_progress.php")
-        .then((response) => response.json())
-        .then((json) => {
-            div.innerHTML =
-                `<div class="alert alert-${json.level}" role="alert">${json.message}</div>`;
-            if (!json.complete) callProgressBar();
-        });
-}
-callProgressBar();
+const upload_div = document.getElementById('upload_progress_bar');
+callProgressBar(upload_div);
 </script>
 
 <?php

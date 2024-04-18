@@ -17,8 +17,7 @@
 
     echo '<div style="float: right;">';
     if($user && $user['role'] == 'god'){
-        echo '<a class="btn btn-sm btn-outline-secondary" href="source_edit.php?source_id='. $source_id .'" role="button">Edit source</a>';
-        echo '&nbsp;<a class="btn btn-sm btn-outline-danger" href="source_delete.php?source_id='. $source_id .'" role="button">Delete source</a>';
+        echo '&nbsp;<a class="btn btn-sm btn-outline-danger" href="#" onclick="alert(\'Deleting is serious business and is currently done at the database level only.\')" role="button">Delete source</a>';
     }
     echo '</div>';
 
@@ -26,11 +25,6 @@
     echo "<p><a href=\"facet_values.php?facet_id={$facet_value['facet_id']}\">{$facet_value['facet_name']}: {$facet_value['facet_value_name']}</a>.</p>";
     echo "<p class=\"lead\">{$source['description']}</p>";
 
-    // write out the select tab 
-    /*
-    searchvar triggerEl = document.querySelector('#myTab a[href="#profile"]')
-    bootstrap.Tab.getInstance(triggerEl).show() // Select tab by name
-    */
 
 ?>
 
@@ -54,6 +48,10 @@
     <li class="nav-item" role="presentation">
         <button class="nav-link" id="harvest-tab" data-bs-toggle="tab" data-bs-target="#harvest" type="button"
             role="tab">Harvest</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="properties-tab" data-bs-toggle="tab" data-bs-target="#properties" type="button"
+            role="tab">Properties</button>
     </li>
     <?php
      } // can edit
@@ -99,6 +97,10 @@
         <?php require_once('source_harvest.php'); ?>
     </div>
 
+    <!-- PROPERTIES -->
+    <div class="tab-pane fade" id="properties" role="tabpanel">
+        <?php require_once('source_properties.php'); ?>
+    </div>
     <?php
      } // can edit
 ?>

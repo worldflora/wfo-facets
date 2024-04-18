@@ -8,8 +8,7 @@ require_once('../include/Importer.php');
 $out = array();
 $out['timestamp'] = time();
 
-
-$importer = unserialize($_SESSION['importer']);
+$importer = unserialize(@$_SESSION['importer']);
 
 if($importer){
     $rows_processed = $importer->import(10);
