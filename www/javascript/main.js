@@ -1,5 +1,36 @@
 const graphQlUri = "https://list.worldfloraonline.org/gql.php";
 
+
+// search results are cached in local storage
+// we need to make sure this doesn't overfill
+// or go stale.
+
+// not too many
+if (localStorage.length > 50000) {
+    alert("Over 50,000 items. Clearing local storage.");
+    localStorage.clear();
+}
+
+// clear it after each data release (on the solstices)
+$created_month = localStorage.getItem('created_month');
+const d = new Date();
+if (!$created_month) {
+    localStorage.setItem('created_month', d.getMonth());
+} else {
+    created = parseInt($created_month);
+    $now = d.getMonth();
+
+    // if it was created in the first half of the year and we are in the second
+    // or it was created in the second half and we are in the first
+    // then reinitialize the storage.
+    if ((created < 6 && $now > 5) || (created > 5 && $now < 6)) {
+        alert("New data release. Clearing local storage.");
+        localStorage.clear();
+        localStorage.setItem('created_month', $now);
+    }
+}
+
+
 function runGraphQuery(query, variables, giveBack) {
 
     const payload = {
@@ -24,7 +55,18 @@ function runGraphQuery(query, variables, giveBack) {
 
 function replaceNameListItem(wfo, source_id, value_id, editable) {
 
-    // fetch a name for the wfo first
+    // firstly see if we have the name in localstorage
+    let name_json = localStorage.getItem(wfo);
+    if (name_json) {
+        let name = JSON.parse(name_json);
+        let li = getNameListItem(name, source_id, value_id, editable = true);
+        let old_li = document.getElementById(wfo);
+        old_li.replaceWith(li);
+        return;
+    }
+
+    // fetch a name for the wfo from the index if
+    // because we don't have it local
     let get_query =
         `query NameFetch($id: String!){
                     taxonNameById(nameId: $id){
@@ -54,6 +96,7 @@ function replaceNameListItem(wfo, source_id, value_id, editable) {
         let li = getNameListItem(name, source_id, value_id, editable = true);
         let old_li = document.getElementById(wfo);
         old_li.replaceWith(li);
+        localStorage.setItem(wfo, JSON.stringify(name));
 
     });
 

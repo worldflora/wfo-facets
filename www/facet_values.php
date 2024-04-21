@@ -27,6 +27,7 @@
     foreach($facet_values as $fv){
         
         echo '<li class="list-group-item">';
+        echo "<a id=\"facet_value_{$fv['id']}\" ></a>";
         echo '<div class="row">';
         
         echo '<div class="col">';
@@ -59,7 +60,7 @@
         if($user && $user['role'] == 'god'){
             echo '<a class="btn btn-sm btn-outline-secondary" href="facet_value_edit.php?facet_value_id='. $fv['id'] .'" role="button">Edit value</a>';
             echo '&nbsp;<a class="btn btn-sm btn-outline-secondary" href="source_create.php?facet_value_id='. $fv['id'] .'" role="button">Create source</a>';
-            echo '&nbsp;<a class="btn btn-sm btn-outline-danger" href="facet_value_delete.php?facet_value_id='. $fv['id'] .'" role="button">Delete</a>';
+            echo '&nbsp;<a class="btn btn-sm btn-outline-danger" href="#" onclick="alert(\'This currently needs to be done at the database level.\')" role="button">Delete</a>';
         }
         echo '</div>'; // end of col
         echo '</div>'; // end of row
