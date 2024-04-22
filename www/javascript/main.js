@@ -1,4 +1,5 @@
 const graphQlUri = "https://list.worldfloraonline.org/gql.php";
+let listChanged = false; // a global handle for when to refresh the list
 
 
 // search results are cached in local storage
@@ -182,6 +183,7 @@ function toggleListMembership(node, wfo, source_id, value_id) {
     fetch(`list_widget.php?wfo=${wfo}&source_id=${source_id}&value_id=${value_id}&toggle=true`)
         .then(x => x.text())
         .then(y => node.innerHTML = y);
+    listChanged = true;
 
 }
 
@@ -193,4 +195,5 @@ function callProgressBar(div) {
                 `<div class="alert alert-${json.level}" role="alert">${json.message}</div>`;
             if (!json.complete) callProgressBar(div);
         });
+    listChanged = true;
 }

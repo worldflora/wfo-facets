@@ -136,4 +136,15 @@
         echo "tab.show();\n";
     }
 ?>
+
+const listTab = document.getElementById('list-tab');
+listTab.addEventListener('shown.bs.tab', event => {
+    // listChanged is set to false when the page
+    // is loaded then if any javascript process changes the list
+    // it sets it to true so that clicking on the list tab 
+    // will refresh the page
+    if (listChanged) {
+        document.location = 'source.php?tab=list-tab&source_id=<?php echo $source_id ?>'
+    }
+});
 </script>

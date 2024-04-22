@@ -20,6 +20,7 @@ class NameCache{
                 query NameFetch($id: String!){
                     taxonNameById(nameId: $id){
                         fullNameStringPlain
+                        wfoIdsDeduplicated
                     }
                 }
             ';
@@ -46,7 +47,18 @@ class NameCache{
             if(isset($result->data->taxonNameById)){
                 $name = $result->data->taxonNameById->fullNameStringPlain;
                 $name_safe = $mysqli->real_escape_string($name);
-                $mysqli->query("INSERT INTO name_cache (`wfo_id`, `name`) VALUES ('$wfo_id', '$name_safe');");
+
+                // we have to be careful with deduplication IDs 
+                // they may have started with a duplicate ID and the name would have 
+                // been returned with the real one plus the passed one 
+                // or a name may just have deduplication IDs
+                $all_wfo_ids = $result->data->taxonNameById->wfoIdsDeduplicated; // might be empty but we don't care
+                $all_wfo_ids[] = $wfo_id;
+
+                foreach($all_wfo_ids as $wfo_id){
+                    $mysqli->query("INSERT INTO name_cache (`wfo_id`, `name`) VALUES ('$wfo_id', '$name_safe');");
+                }
+                
                 return true;
             }else{
                 return false;
