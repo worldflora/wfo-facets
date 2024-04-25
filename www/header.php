@@ -47,6 +47,10 @@
                         <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'sources.php' ? 'active': '';  ?> "
                             href="sources.php">Sources</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'index_state.php' ? 'active': '';  ?> "
+                            href="index_state.php">Indexed</a>
+                    </li>
                     <?php 
                         if($user){
                             ?>

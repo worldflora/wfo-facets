@@ -101,31 +101,37 @@ class WfoFacets{
             return true;
         }
 
-        // get the scoring for each one and add or remove it as required.
+        // get the scoring for each one and add it as required.
         $my_scores = array();
         foreach($path_wfos as $wfo){
 
-            $sql = "SELECT f.facet_id, f.value_id, s.negated, s.source_id 
-                from wfo_scores as s 
-                join facets as f on s.value_id = f.value_id 
-                where s.wfo_id = '$wfo';";
+            $sql = "SELECT 
+                f.id as facet_id,
+                f.`name` as facet_name,
+                fv.id as facet_value_id, 
+                fv.`name` as facet_value_name,
+                s.id as source_id,
+                s.`name` as source_name
+                FROM wfo_scores as ws
+                JOIN facet_values AS fv ON ws.value_id = fv.id
+                JOIN facets AS f ON fv.facet_id = f.id
+                JOIN sources AS s ON ws.source_id = s.id
+                WHERE ws.wfo_id = '{$wfo}';";
+
             $response = $mysqli->query($sql);
             $facets = $response->fetch_all(MYSQLI_ASSOC);
               
             foreach($facets as $facet){
 
-                $facet_value_id = $facet['facet_id'] . '-' . $facet['value_id'];
+                $facet_value_id = $facet['facet_id'] . '-' . $facet['facet_value_id'];
 
-                // the provenance tag is of the form  wfo-0000400164-Q47542613-1
-                // i.e. This taxon is said to have it by this source.
-                $provenance_tag = "{$wfo}-Q{$facet['source_id']}-" . ($facet['negated'] == 1 ? 'neg': 'add');
+                // the provenance tag 
+                $provenance_tag = "{$wfo}-s-{$facet['source_id']}-" . ($wfo == $wfo_id ? 'direct' : 'ancestor');
 
                 // Is it already recorded?
                 if(isset($my_scores[$facet_value_id])){
                     // add the source as an extra
                     $my_scores[$facet_value_id]['prov'][] = $provenance_tag;
-                    // update the negation status
-                    $my_scores[$facet_value_id]['negated'] = $facet['negated'];
                 }else{
                     // setting it up for the first time so create the provenance array
                     $facet['prov'] = array($provenance_tag);
@@ -140,89 +146,83 @@ class WfoFacets{
         // now we do the direct synonyms
         $synonyms = $body->data->taxonNameById->currentPreferredUsage->hasSynonym;
         foreach ($synonyms as $syn) {
+
+            $sql = "SELECT 
+                f.id as facet_id,
+                f.`name` as facet_name,
+                fv.id as facet_value_id, 
+                fv.`name` as facet_value_name,
+                s.id as source_id,
+                s.`name` as source_name
+                FROM wfo_scores as ws
+                JOIN facet_values AS fv ON ws.value_id = fv.id
+                JOIN facets AS f ON fv.facet_id = f.id
+                JOIN sources AS s ON ws.source_id = s.id
+                WHERE ws.wfo_id = '{$syn->id}';";
             
-            $sql = "SELECT f.facet_id, f.value_id, s.negated, s.source_id  
-                    from wfo_scores as s 
-                    join facets as f on s.value_id = f.value_id 
-                    where s.wfo_id = '{$syn->id}';";
             $response = $mysqli->query($sql);
             $facets = $response->fetch_all(MYSQLI_ASSOC);
 
             foreach($facets as $facet){
-                // we just add the non-negated ones
-                // the negated ones are ignored
-                if(!$facet['negated']){
 
-                    $facet_value_id = $facet['facet_id'] . '-' . $facet['value_id'];
-                    $provenance_tag = "{$syn->id}-Q{$facet['source_id']}-add"; // only add here
+                $facet_value_id = $facet['facet_id'] . '-' . $facet['facet_value_id'];
+                $provenance_tag = "{$syn->id}-s-{$facet['source_id']}-synonym"; // only add here
 
-                    // Is it already recorded?
-                    if(isset($my_scores[$facet_value_id])){
-                        // add the source as an extra
-                        $my_scores[$facet_value_id]['prov'][] = $provenance_tag;
-                    }else{
-                        // setting it up for the first time so create the provenance array
-                        $facet['prov'] = array($provenance_tag);
-                        unset($facet['source_id']);
-                        $my_scores[$facet_value_id] = $facet;
-                    }
-                    
+                // Is it already recorded?
+                if(isset($my_scores[$facet_value_id])){
+                    // add the source as an extra
+                    $my_scores[$facet_value_id]['prov'][] = $provenance_tag;
+                }else{
+                    // setting it up for the first time so create the provenance array
+                    $facet['prov'] = array($provenance_tag);
+                    unset($facet['source_id']);
+                    $my_scores[$facet_value_id] = $facet;
                 }
+
             }
         }
 
         // now we need to actually update the index
-
+  //      echo "<pre>";
+  //      print_r($my_scores);
+//exit;
         // remove the existing facet properties
         foreach($solr_doc as $prop => $val){
-            if(preg_match('/^Q[0-9]+_ss$/', $prop)) unset($solr_doc->{$prop}); // facet field
-            if(preg_match('/^Q[0-9]+_provenance_ss$/', $prop)) unset($solr_doc->{$prop}); // facet provenance field
-            if(preg_match('/^Q[0-9]+_t$/', $prop)) unset($solr_doc->{$prop}); // text version
+            if(preg_match('/^wfo-f-.+_ss$/', $prop)) unset($solr_doc->{$prop}); // facet field
+            if(preg_match('/^wfo-fv-.+_provenance_ss$/', $prop)) unset($solr_doc->{$prop}); // facet provenance field
+            if(preg_match('/^wfo-f-.+_t$/', $prop)) unset($solr_doc->{$prop}); // text version
         }
 
+        // actually add them in
         foreach($my_scores as $score){
 
-            $facet_field_name = "Q{$score['facet_id']}_ss";
-            $facet_prov_field_name = "Q{$score['facet_id']}_provenance_ss";
+            $facet_field_name = "wfo-f-{$score['facet_id']}_ss";
+            $facet_prov_field_name = "wfo-fv-{$score['facet_value_id']}_provenance_ss";
+            $facet_text_field_name = "wfo-f-{$score['facet_id']}_t";
 
-            // if we don't have this facet yet then add it.
+            // if we don't have this facet yet then add 
+            // in the required fields
             if(!isset($solr_doc->{$facet_field_name})){
                 $solr_doc->{$facet_field_name} = array();
+                $solr_doc->{$facet_prov_field_name} = array();
+                $solr_doc->{$facet_text_field_name} = $score['facet_name'] . " : ";
             }
 
-            // add the facet value if it isn't negated
-            if(!$score['negated']){
-                $solr_doc->{$facet_field_name}[] = 'Q' . $score['value_id'];
-            }
+            // add the facet value
+            $solr_doc->{$facet_field_name}[] = 'wfo-fv-' . $score['facet_value_id'];
 
-            // add it to the provenance field whether or not it is negated
-            // add the value Q id to the start. The provenance tag now goes;
-            // valueQ-nameWFO-sourceQ-add or valueQ-nameWFO-sourceQ-neg
+            // add it to the provenance field
             foreach($score['prov'] as $prov){
-                $solr_doc->{$facet_prov_field_name}[] = "Q{$score['value_id']}-" . $prov;
+                $solr_doc->{$facet_prov_field_name}[] = $prov;
             }
+            
+            // add it to the text field so we can 
+            $solr_doc->{$facet_text_field_name} .= $score['facet_value_name'] . " : ";
             
             
         }
 
-        // add in the text for the facets so that we can freetext search on it
-        $facets_text = array(); 
-        foreach($solr_doc as $prop => $val){
-            $matches = array();
-            if(preg_match('/^(Q[0-9]+)_ss$/', $prop, $matches)){
-                $facet_q = $matches[1];
-                $facet = WikiItem::getWikiItem($facet_q);
-                $facets_text[] = $facet->getIntSearchText();
-                foreach($solr_doc->{$prop} as $val_q){
-                    $val = WikiItem::getWikiItem($val_q);
-                    $facets_text[] = $val->getIntSearchText();
-                }
-                // pop all the text in field for this property
-                $facet_text_field_name = "{$facet_q}_t";
-                $solr_doc->{$facet_text_field_name} = implode(' | ', $facets_text);
-            };// a facet property
-        }// each property in solr doc
-
+        // flag when we indexed it
         $solr_doc->facets_last_indexed_i = time();
 
         $index->saveDoc($solr_doc, $commit);
@@ -232,4 +232,174 @@ class WfoFacets{
     }
 
 
+    /**
+     * Gets all the facets and their values
+     * and adds them to the index in a single
+     * commit.
+     * 
+     */
+    public static function indexFacets(){
+
+        global $mysqli;
+
+        $solr_docs = array();
+
+        // we create solr docs as near as damn it 
+        // in the query
+        $response = $mysqli->query("SELECT 
+            id as db_id,
+            concat('wfo-f-', id) as id,
+            'wfo-facet' as kind, 
+            `name` as 'name', 
+            `description` as 'description',
+            `link_uri` as 'link_uri'
+            FROM facets ORDER BY `name`");
+        $facets = $response->fetch_All(MYSQLI_ASSOC);
+        $response->close();
+
+
+        foreach($facets as $facet){
+
+            // hold on to the db id
+            $facet_id = $facet['db_id'];
+            unset($facet['db_id']);
+            
+            // add the facet values for this facet
+            $response = $mysqli->query("SELECT 
+                concat('wfo-fv-', id) as id,
+                'wfo-facet-value' as kind, 
+                `name` as 'name', 
+                `description` as 'description',
+                `link_uri` as 'link_uri',
+                concat('wfo-f-', `facet_id`) as facet_id 
+                FROM facet_values 
+                WHERE facet_id = $facet_id
+                ORDER BY `name`");
+            $facet_values = $response->fetch_All(MYSQLI_ASSOC);
+            $facet['facet_values'] = array();
+            foreach ($facet_values as $fv) {
+               $facet['facet_values'][$fv['id']] = $fv;
+            }
+            $response->close();
+            
+            $solr_docs[] = (object)array('id'=> $facet['id'], 'json_t' => json_encode((object)$facet));
+
+        }
+
+        $index = new SolrIndex();
+        $response = $index->saveDocs($solr_docs, true);
+        echo "<pre>";
+        print_r($response);
+
+    }
+
+    public static function indexSources(){
+
+        global $mysqli;
+
+        $solr_docs = array();
+
+        // we create solr docs as near as damn it 
+        // in the query
+        $response = $mysqli->query("SELECT 
+            concat('wfo-fs-', id) as id,
+            'wfo-facet-source' as kind, 
+            `name` as 'name', 
+            `description` as 'description',
+            `link_uri` as link_uri
+            FROM sources ORDER BY `name`");
+        $sources = $response->fetch_All(MYSQLI_ASSOC);
+        $response->close();
+
+        foreach ($sources as $s) {
+            $solr_docs[] = (object)array('id'=> $s['id'], 'json_t' => json_encode((object)$s));
+        }
+
+        $index = new SolrIndex();
+        $response = $index->saveDocs($solr_docs, true);
+
+    }
+
+
+    public static function getFacetsFromDoc($solrDoc){
+
+        $index = new SolrIndex();
+        $out = array();
+
+        foreach($solrDoc as $prop => $val){
+            $matches = array();
+            if(preg_match('/^(wfo-f-[0-9]+)_s/', $prop, $matches)){
+
+                // set up the facet
+                $prop_prefix = $matches[1];
+                $out[$prop_prefix] = array();
+                $out[$prop_prefix]['facet_values'] = array();
+
+                // add the values
+                foreach ($solrDoc->{$prop} as $fv) {
+                    $out[$prop_prefix]['facet_values'][$fv] = array();
+                    $out[$prop_prefix]['facet_values'][$fv]['provenance'] = array();
+
+                    // and their provenance 
+                    $prov_prop = $fv . '_provenance_ss';
+                    foreach($solrDoc->{$prov_prop} as $prov){
+                        $out[$prop_prefix]['facet_values'][$fv]['provenance'][]  = $prov;
+                    }
+
+                }
+                
+            }
+        } // fin building the structure
+
+        // if we've not been indexed then we are empty
+        if(!$out) return $out;
+
+        // populate it with names
+        $query = array('query' => "id:(" . implode(' OR ', array_keys($out)) . ")");
+        $facet_docs = $index->getSolrDocs((object)$query);
+        foreach ($facet_docs as $fd){
+           $meta = json_decode($fd->json_t);
+
+           $out[$fd->id]['meta']['id'] = $meta->id;
+           $out[$fd->id]['meta']['name'] = $meta->name;
+           $out[$fd->id]['meta']['description'] = trim($meta->description);
+           $out[$fd->id]['meta']['link_uri'] = trim($meta->link_uri);
+
+           foreach (array_keys($out[$fd->id]['facet_values']) as $fv_key) {
+                
+                $out[$fd->id]['facet_values'][$fv_key]['meta'] = $meta->facet_values->{$fv_key};
+
+                // break down the provenance
+                $new_provs = array();
+                foreach ($out[$fd->id]['facet_values'][$fv_key]['provenance'] as $prov) {
+                        //wfo-4000019729-s-37-ancestor
+                        $matches = array();
+                        preg_match('/^(wfo-[0-9]{10})-s-([0-9]+)-([a-z]+)$/', $prov, $matches);
+
+                        $wfo = $matches[1];
+                        $name_doc = $index->getDoc($wfo);
+
+                        $source_id  = $matches[2];
+                        $source_doc = $index->getDoc('wfo-fs-'. $source_id);
+                        $source_doc = json_decode($source_doc->json_t);
+
+                        $new_provs[] = array(
+                            'wfo_id' => $wfo,
+                            'full_name_html' => $name_doc->full_name_string_html_s,
+                            'full_name_plain' => $name_doc->full_name_string_plain_s,
+                            'source_id' => $source_id,
+                            'source_name' => $source_doc->name,
+                            'kind' => $matches[3],
+                        );
+                }
+                $out[$fd->id]['facet_values'][$fv_key]['provenance'] = $new_provs;
+           
+            }
+           
+        }
+
+
+        return $out;
+
+    }
 }

@@ -140,7 +140,7 @@ function getNameListItem(name, source_id, value_id, editable = false) {
 
     const name_a = document.createElement("a");
     p.appendChild(name_a);
-    name_a.innerHTML = name.fullNameStringHtml;
+    name_a.innerHTML = name.fullNameStringHtml + "&nbsp;↗";
     name_a.setAttribute('href', name.stableUri);
     name_a.setAttribute('target', 'wfo');
 
@@ -152,6 +152,10 @@ function getNameListItem(name, source_id, value_id, editable = false) {
     p.appendChild(status_span);
     status_span.innerHTML = `&nbsp;<strong>${name.nomenclaturalStatus} : ${name.role}</strong>`;
 
+    // if it is an accepted name then we add a link to view the indexed value
+    if (name.role == 'accepted')
+        status_span.innerHTML = status_span.innerHTML + `&nbsp;:&nbsp;<a href="index_state.php?wfo_id=${name.id}">inspect</a>`;
+
     // add the accepted name if we have it
     if (name.currentPreferredUsage && name.id != name.currentPreferredUsage.hasName.id) {
 
@@ -161,9 +165,14 @@ function getNameListItem(name, source_id, value_id, editable = false) {
 
         const syn_a = document.createElement("a");
         p.appendChild(syn_a);
-        syn_a.innerHTML = name.currentPreferredUsage.hasName.fullNameStringHtml;
+        syn_a.innerHTML = name.currentPreferredUsage.hasName.fullNameStringHtml + "&nbsp;↗";
+
         syn_a.setAttribute('href', name.currentPreferredUsage.hasName.stableUri);
         syn_a.setAttribute('target', 'wfo');
+
+        const span = document.createElement("span");
+        p.appendChild(span);
+        span.innerHTML = `<strong>&nbsp;:&nbsp;</strong><a href="index_state.php?wfo_id=${name.currentPreferredUsage.hasName.id}">inspect</a>`;
     }
 
     // add the path in if we have it
@@ -197,3 +206,65 @@ function callProgressBar(div) {
         });
     listChanged = true;
 }
+// define the GraphQL query string ahead of times
+const lookup_query =
+    `query NameSearch($terms: String!){
+                    taxonNameSuggestion(
+                        termsString: $terms
+                        limit: 100
+                    ) {
+                        id
+                        stableUri
+                        fullNameStringPlain
+                        fullNameStringHtml
+                        nomenclaturalStatus
+                        role
+                        rank
+                        currentPreferredUsage {
+                            pathString
+                            hasName {
+                                id
+                                stableUri
+                                fullNameStringHtml
+                            }
+                        }
+                    }
+                }`;
+
+function nameLookup(e, nameList, sourceId, valueId) {
+
+    let query_string = e.target.value.trim();
+    if (query_string.length > 3) {
+
+        // tell them we are looking
+        nameList.innerHTML = "<li class=\"list-group-item\">Searching...</li>";
+
+        // call the api
+        runGraphQuery(lookup_query, {
+            terms: query_string
+        }, (response) => {
+
+            //console.log(response.data);
+
+            // remove the current children
+            nameList.childNodes.forEach(child => {
+                nameList.removeChild(child);
+            });
+
+            response.data.taxonNameSuggestion.forEach(name => {
+                //console.log(name);
+                nameList.appendChild(getNameListItem(name, sourceId, valueId, sourceId != null));
+            });
+
+            // if we haven't found anything then put a message in
+            if (nameList.childNodes.length == 0) {
+                nameList.innerHTML =
+                    `<li class=\"list-group-item\">Nothing found for "${query_string}" </li>`;
+            }
+        });
+
+
+    } else {
+        nameList.innerHTML = "<li class=\"list-group-item\">Add 4 or more letters to search</li>";
+    }
+};

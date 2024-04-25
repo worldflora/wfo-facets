@@ -5,16 +5,17 @@
  */
 class SolrIndex{
 
-    public function getDoc($wfo_id){
+    public function getDoc($id){
 
-        $wfo_id = trim($wfo_id);
+        $id = trim($id);
 
-        // malformed wfo_ids are rejected
-        if(!preg_match('/^wfo-[0-9]{10}$/', $wfo_id)) return null;
-
-        // load it from the index
-        $record_id = $wfo_id . '-' . WFO_DEFAULT_VERSION;
-
+        // expand name ids to record ids
+        if(preg_match('/^wfo-[0-9]{10}$/',$id)){
+            $record_id = $id . '-' . WFO_DEFAULT_VERSION;
+        }else{
+            $record_id = $id;
+        }
+        
         // load it by id
         $solr_query_uri = SOLR_QUERY_URI . '/get?id=' . $record_id;
         $ch = $this->getCurlHandle($solr_query_uri);
