@@ -29,7 +29,7 @@
             $input_file_path .= "/$now.csv";
             file_put_contents($input_file_path, file_get_contents($harvest_uri));
 
-            $importer = new Importer($input_file_path, $harvest_overwrites ? true : false, $source_id, $facet_value);
+            $importer = new Importer($input_file_path, $harvest_overwrites ? true : false, $source_id, $facet_value['facet_value_id']);
             $_SESSION['importer'] = serialize($importer);
 
             $render_harvest_progress = true;
@@ -115,6 +115,17 @@ callProgressBar(harvest_div);
         <button type="submit" name="harvest_button" value="save" class="btn btn-primary">Save settings</button>
         &nbsp;
         <button type="submit" name="harvest_button" value="harvest" class="btn btn-primary">Harvest now</button>
+    </div>
+    <div>
+        <p>Last harvested:
+            <?php 
+            if($harvest_last){
+                echo $harvest_last;
+            }else{
+                echo "Never";
+            }
+         ?>
+        </p>
     </div>
 
 </form>

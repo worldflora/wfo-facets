@@ -20,6 +20,19 @@ class WfoFacets{
      */
     public static function indexTaxon($wfo_id, $since = false, $commit = true){
 
+        $solr_doc = WfoFacets::getTaxonIndexDoc($wfo_id, $since, $commit);
+        if($solr_doc){
+            $index = new SolrIndex();
+            $index->saveDoc($solr_doc, $commit);
+            return true;
+        }else{
+            return false;
+        }
+
+    }
+
+     public static function getTaxonIndexDoc($wfo_id, $since = false, $commit = true){
+
         global $mysqli;
 
         $index = new SolrIndex();
@@ -225,11 +238,12 @@ class WfoFacets{
         // flag when we indexed it
         $solr_doc->facets_last_indexed_i = time();
 
-        $index->saveDoc($solr_doc, $commit);
+        return $solr_doc;
 
-        return true;
 
     }
+
+
 
 
     /**

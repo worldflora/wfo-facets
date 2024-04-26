@@ -6,13 +6,13 @@ class Importer{
     public string $filePath;
     public bool   $overwrite;
     public int $sourceId;
-    public Array $facetValue;
+    public int $facetValueId;
     public string $offset;
     public ?int $created = null;
     public $file = null;
     
 
-    public function __construct($input_file_path, $overwrite, $source_id, $facet_value, $offset = 0){
+    public function __construct($input_file_path, $overwrite, $source_id, $facet_value_id, $offset = 0){
 
         global $mysqli;
 
@@ -21,7 +21,7 @@ class Importer{
         $this->filePath = $input_file_path;
         $this->overwrite = $overwrite;
         $this->sourceId = $source_id;
-        $this->facetValue = $facet_value;
+        $this->facetValueId = $facet_value_id;
         $this->offset = $offset;
 
         $this->file = fopen($this->filePath, 'r');
@@ -62,7 +62,10 @@ class Importer{
             $row = fgetcsv($this->file);
             $this->offset++;
 
-            if(!$row) return $i;
+            if(!$row){
+                $mysqli->query("UPDATE sources SET harvest_last = now() WHERE id = {$this->sourceId};");
+                return $i;
+            } 
 
             // wfo id is in first column
             $wfo_id = $row[0];
@@ -81,7 +84,7 @@ class Importer{
 
             // must exist in the cache - will be added if it isn't there
             if(NameCache::cacheName($wfo_id)){
-                $mysqli->query("INSERT INTO wfo_scores (`wfo_id`, `source_id`, `value_id`) VALUES ('$wfo_id', {$this->sourceId}, {$this->facetValue['facet_value_id']});");
+                $mysqli->query("INSERT INTO wfo_scores (`wfo_id`, `source_id`, `value_id`) VALUES ('$wfo_id', {$this->sourceId}, {$this->facetValueId});");
                 if($mysqli->error) error_log($mysqli->error);
             }
 
