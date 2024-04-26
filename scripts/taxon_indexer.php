@@ -13,10 +13,12 @@ $page_size = 100;
 $offset = 0;
 $index = new SolrIndex();
 $updated_docs = array();
-$start = new DateTime();
+$start = new DateTime(); 
+
+// set correct
 
 $solr_query = array(
-    'query' => 'genus_string_s:Rhododendron',
+    'query' => '*:*',
     'filter' => array("classification_id_s:" . WFO_DEFAULT_VERSION, "role_s:accepted"),
     'fields' => array("wfo_id_s", "full_name_string_plain_s"),
     'limit' => $page_size,
