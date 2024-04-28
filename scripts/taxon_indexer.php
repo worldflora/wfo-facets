@@ -13,7 +13,6 @@ $page_size = 100;
 $offset = 0;
 $index = new SolrIndex();
 $updated_docs = array();
-$start = new DateTime(); 
 
 if($argv[1]) $offset = $argv[1];
 
@@ -28,6 +27,8 @@ $solr_query = array(
 
 while(true){
     
+    $page_start = new DateTime(); 
+
     // get the next page
     $solr_query['offset'] = $offset;
     $solr_response = $index->getSolrResponse($solr_query);
@@ -52,17 +53,19 @@ while(true){
 
     // report progress
     $now = new DateTime();
-    $diff = $start->diff($now);
-    echo "Elapse time:\t";
-    echo $diff->format('%a days, %h hours, %i minutes, %s seconds');
-    echo "\n";
-    $diff_secs = $now->getTimestamp() - $start->getTimestamp();
-    $average_taxon_time = $diff_secs/$offset;
-    $total_duration = floor($solr_response->response->numFound * $average_taxon_time);
-    $eta = clone $start;
-    $eta->modify("+{$total_duration} seconds");
+    $page_secs = $now->getTimestamp() - $page_start->getTimestamp();
+    
+    $page_duration = floor($page_secs);
+    echo "Seconds for page: $page_duration\n";
+
+    // now an estimage
+    $average_taxon_time = $page_secs/$page_size;
+    $taxa_remaining = $solr_response->response->numFound - $offset;
+    $secs_remaining = floor($taxa_remaining * $average_taxon_time);
+    
+    $page_start->modify("+{$secs_remaining} seconds");
     echo "ETA:\t\t";
-    echo $eta->format(DATE_ATOM);
+    echo $page_start->format(DATE_ATOM);
     echo "\n\n";
 
     // do the next page or stop
