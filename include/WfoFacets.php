@@ -107,6 +107,10 @@ class WfoFacets{
 
         // get the solr document to see if it actually needs updating
         $solr_doc = $index->getDoc($wfo_id);
+        if(!$solr_doc){
+            echo "No solr doc retrieved. \n";
+            return null;
+        } 
 
         // if we have set a start time and there is one in the solr doc and the 
         // solr doc is newer than the start time then don't index it - we've just done it!

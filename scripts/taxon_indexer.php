@@ -15,7 +15,7 @@ $index = new SolrIndex();
 $updated_docs = array();
 $start = new DateTime(); 
 
-// set correct
+if($argv[1]) $offset = $argv[1];
 
 $solr_query = array(
     'query' => '*:*',
@@ -38,7 +38,8 @@ while(true){
     foreach ($solr_response->response->docs as $doc) {
         $counter++;
         echo "\t$counter\t{$doc->wfo_id_s}\t{$doc->full_name_string_plain_s}\t";
-        $updated_docs[] = WfoFacets::getTaxonIndexDoc($doc->wfo_id_s);
+        $new_doc = WfoFacets::getTaxonIndexDoc($doc->wfo_id_s);
+        if($new_doc) $updated_docs[] = $new_doc;
         echo "done\n";
     }
 
