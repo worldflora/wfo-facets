@@ -99,6 +99,13 @@ document.getElementById("state_search").onkeyup = function(e) {
 
     <?php 
 
+        if($index_name->role_s != 'accepted'){
+            echo "<p>This name is a '{$index_name->role_s}' name so doesn't have facets in the index.</p>";
+        }
+
+       // echo "<pre>";
+       // print_r($index_name);
+
         $facets = WfoFacets::getFacetsFromDoc($index_name);
 
         foreach($facets as $facet_id => $facet){
@@ -122,22 +129,7 @@ document.getElementById("state_search").onkeyup = function(e) {
             echo '</ul>';
             
         }
-
-        //echo "<pre>";
-       // print_r($facets);
-       // echo "</pre>";
-
-        
-/*
-        foreach($index_name as $prop => $val){
-            if(preg_match('/^wfo-f./', $prop)){
-                echo "<h4>$prop</h4>";
-                echo "<pre>";
-                print_r($index_name->{$prop});
-                echo "</pre>";
-            }  
-        }
-  */      
+    
     ?>
     </pre>
 </div>

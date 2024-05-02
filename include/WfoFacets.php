@@ -37,80 +37,34 @@ class WfoFacets{
 
         $index = new SolrIndex();
 
-        // this gets the heirarchy from graphql
-        $graph_query = "{
-            taxonNameById(nameId: \"$wfo_id\") {
-                id
-                currentPreferredUsage {
-                    id
-                    hasName {
-                        id
-                        fullNameStringPlain
-                    }
-                    path{
-                        hasName{
-                            id
-                            fullNameStringPlain
-                        }
-                    }
-                    hasSynonym{
-                        id
-                        fullNameStringPlain
-                    }
-                }
-            }
-        }";
-
-        // we use the index as a general curl wrapper as it knows about this stuff
-        $payload = json_encode((object)array('query' => $graph_query, 'variables' => null));
-        $response = $index->curlPostJson(PLANT_LIST_GRAPHQL_URI, $payload);
-
-        $body = json_decode($response->body);
+        // get the whole taxon tree from SOLR query
+        $taxon_tree = WfoFacets::getTaxonTree($wfo_id);
 
         // if there is no current usage then it isn't placed
         // and we return false - no indexing
-        if(!isset($body->data->taxonNameById->currentPreferredUsage) || !$body->data->taxonNameById->currentPreferredUsage ){
-            return false;
-        }    
+        if($taxon_tree['target']->role_s == 'unplaced' || $taxon_tree['target']->role_s == 'deprecated') return false;
 
         // check this is an accepted name.
         // if not then index the accepted name or nothing
-        if($body->data->taxonNameById->currentPreferredUsage->hasName->id !=  $body->data->taxonNameById->id){
-            return WfoFacets::indexTaxon($body->data->taxonNameById->currentPreferredUsage->hasName->id);
-        }
-        
-        if($body->data->taxonNameById->currentPreferredUsage){
-
-            $ancestors = $body->data->taxonNameById->currentPreferredUsage->path;
-
-            $path_wfos = array();
-
-            // add self to start if we are a synonym
-            if($body->data->taxonNameById->currentPreferredUsage->hasName->id != $wfo_id){
-                $path_wfos[] = $wfo_id;
+        if($taxon_tree['target']->role_s == 'synonym'){
+            // it is a synonym
+            if( isset($taxon_tree['target']->accepted_id_s) &&  isset($taxon_tree['all'][$taxon_tree['target']->accepted_id_s])){
+                // it has an accepted name and that name is available in the tree
+                return WfoFacets::indexTaxon($taxon_tree['all'][$taxon_tree['target']->accepted_id_s]->wfo_id_s);
+            }else{
+                // something odd. We don't have the accepted name for the synonym
+                return false;
             }
-            foreach($ancestors as $anc){
-                $path_wfos[] = $anc->hasName->id;
-            }
-
-            // start from the root of the tree
-            $path_wfos = array_reverse($path_wfos);
-        
-        
-        }else{
-
-            // we have no relations :(
-            $path_wfos = array($wfo_id);
-
         }
+
+        // build a list of the wfo ids - for the names - from the path
+        $path_wfos = array();
+        foreach($taxon_tree['path'] as $p) $path_wfos[] = $p->wfo_id_s;
+
         // now we have all the names/taxa in order from top to bottom
 
-        // get the solr document to see if it actually needs updating
-        $solr_doc = $index->getDoc($wfo_id);
-        if(!$solr_doc){
-            echo "No solr doc retrieved. \n";
-            return null;
-        } 
+        // get a copy of the document we will update and return
+        $solr_doc = $taxon_tree['target'];
 
         // if we have set a start time and there is one in the solr doc and the 
         // solr doc is newer than the start time then don't index it - we've just done it!
@@ -161,8 +115,7 @@ class WfoFacets{
         }
 
         // now we do the direct synonyms
-        $synonyms = $body->data->taxonNameById->currentPreferredUsage->hasSynonym;
-        foreach ($synonyms as $syn) {
+        foreach ($taxon_tree['synonyms'] as $syn) {
 
             $sql = "SELECT 
                 f.id as facet_id,
@@ -175,7 +128,7 @@ class WfoFacets{
                 JOIN facet_values AS fv ON ws.value_id = fv.id
                 JOIN facets AS f ON fv.facet_id = f.id
                 JOIN sources AS s ON ws.source_id = s.id
-                WHERE ws.wfo_id = '{$syn->id}';";
+                WHERE ws.wfo_id = '{$syn->wfo_id_s}';";
             
             $response = $mysqli->query($sql);
             $facets = $response->fetch_all(MYSQLI_ASSOC);
@@ -183,7 +136,7 @@ class WfoFacets{
             foreach($facets as $facet){
 
                 $facet_value_id = $facet['facet_id'] . '-' . $facet['facet_value_id'];
-                $provenance_tag = "{$syn->id}-s-{$facet['source_id']}-synonym"; // only add here
+                $provenance_tag = "{$syn->wfo_id_s}-s-{$facet['source_id']}-synonym"; // only add here
 
                 // Is it already recorded?
                 if(isset($my_scores[$facet_value_id])){
@@ -247,7 +200,57 @@ class WfoFacets{
 
     }
 
+    // get the whole taxon tree from a two SOLR queries
+    // not really a tree but a path
+    public static function getTaxonTree($wfo_id){
 
+        $index = new SolrIndex();
+        $tree = array();
+        $tree['target']  = null;
+        $tree['all'] = array();
+        $tree['path'] = array();
+        $tree['synonyms'] = array();
+
+        $tree['target'] = $index->getDoc($wfo_id);
+
+        // nothing found so just get out of here
+        if(!$tree['target'])return $tree;
+
+        $query = array(
+            'query' => "name_ancestor_path:{$tree['target']->name_ancestor_path}", // everything in this tree of names
+            "limit" => 10000, // big limit - not run out of memory theoretically could fail on stupid numbers of synonyms
+            'filter' => array("classification_id_s:{$tree['target']->classification_id_s}"// filtered by this classification
+            
+        ) );
+        $docs = $index->getSolrDocs((object)$query);
+
+        // get all the docs indexed by their ids
+        foreach($docs as $doc){
+            $tree['all'][$doc->id] = $doc;
+        }
+
+        // build the path
+        $tree['path'][] = $tree['target'];
+        while(true){
+            $current = end($tree['path']);
+            if(!isset($current->parent_id_s)) break; // reached the end
+            if($current->id == $current->parent_id_s) break;
+            $tree['path'][] = $tree['all'][$current->parent_id_s];
+        }
+
+        $tree['path'] = array_reverse($tree['path']);
+
+        // build the synonyms
+        foreach ($tree['all'] as $syn) {
+            if(isset($syn->accepted_id_s) && $syn->accepted_id_s == $tree['target']->id){
+                $tree['synonyms'][] = $syn;
+            }
+        }
+        
+        return $tree;
+
+
+    }
 
 
     /**

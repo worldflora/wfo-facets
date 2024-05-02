@@ -9,7 +9,7 @@ require_once('../include/WfoFacets.php');
 // used after major changes or when a new classification
 // has been deployed.
 
-$page_size = 100;
+$page_size = 1000;
 $offset = 0;
 $index = new SolrIndex();
 $updated_docs = array();
