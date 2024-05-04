@@ -303,7 +303,7 @@ class WfoFacets{
             }
             $response->close();
             
-            $solr_docs[] = (object)array('id'=> $facet['id'], 'json_t' => json_encode((object)$facet));
+            $solr_docs[] = (object)array('id'=> $facet['id'], 'kind_s' => 'wfo-facet', 'json_t' => json_encode((object)$facet));
 
         }
 
@@ -333,7 +333,7 @@ class WfoFacets{
         $response->close();
 
         foreach ($sources as $s) {
-            $solr_docs[] = (object)array('id'=> $s['id'], 'json_t' => json_encode((object)$s));
+            $solr_docs[] = (object)array('id'=> $s['id'], 'kind_s' => 'wfo-facet-source', 'json_t' => json_encode((object)$s));
         }
 
         $index = new SolrIndex();
