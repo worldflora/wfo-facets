@@ -22,9 +22,13 @@ class WfoFacets{
 
         $solr_doc = WfoFacets::getTaxonIndexDoc($wfo_id, $since, $commit);
         if($solr_doc){
-            $index = new SolrIndex();
-            $index->saveDoc($solr_doc, $commit);
-            return true;
+            if(is_object($solr_doc)){
+                $index = new SolrIndex();
+                $index->saveDoc($solr_doc, $commit);
+                return $solr_doc;
+            }else{
+                return true;
+            }
         }else{
             return false;
         }
@@ -50,16 +54,25 @@ class WfoFacets{
             // it is a synonym
             if( isset($taxon_tree['target']->accepted_id_s) &&  isset($taxon_tree['all'][$taxon_tree['target']->accepted_id_s])){
                 // it has an accepted name and that name is available in the tree
-                return WfoFacets::indexTaxon($taxon_tree['all'][$taxon_tree['target']->accepted_id_s]->wfo_id_s);
+                return WfoFacets::getTaxonIndexDoc($taxon_tree['all'][$taxon_tree['target']->accepted_id_s]->wfo_id_s, $since);
             }else{
                 // something odd. We don't have the accepted name for the synonym
+                echo "\nWe don't have the accepted taxon in the tree\n";
+                exit;
                 return false;
             }
         }
 
         // build a list of the wfo ids - for the names - from the path
         $path_wfos = array();
-        foreach($taxon_tree['path'] as $p) $path_wfos[] = $p->wfo_id_s;
+        foreach($taxon_tree['path'] as $p){
+            $path_wfos[] = $p->wfo_id_s;
+            if(isset($p->wfo_id_deduplicated_ss)){
+                foreach ($p->wfo_id_deduplicated_ss as $dupe) {
+                    $path_wfos[] = $dupe;
+                }
+            }
+        } 
 
         // now we have all the names/taxa in order from top to bottom
 
@@ -117,6 +130,18 @@ class WfoFacets{
         // now we do the direct synonyms
         foreach ($taxon_tree['synonyms'] as $syn) {
 
+            // we have to account for deduplication ids 
+            // in the synonyms
+            $syn_ids = array();
+            $syn_ids[] = $syn->wfo_id_s;
+            if(isset($syn->wfo_id_deduplicated_ss)){
+                foreach ($syn->wfo_id_deduplicated_ss as $dupe) {
+                    $syn_ids[] = $dupe;
+                }
+            }
+            $syn_ids = "'" . implode("', '", $syn_ids) . "'";
+
+
             $sql = "SELECT 
                 f.id as facet_id,
                 f.`name` as facet_name,
@@ -128,8 +153,9 @@ class WfoFacets{
                 JOIN facet_values AS fv ON ws.value_id = fv.id
                 JOIN facets AS f ON fv.facet_id = f.id
                 JOIN sources AS s ON ws.source_id = s.id
-                WHERE ws.wfo_id = '{$syn->wfo_id_s}';";
+                WHERE ws.wfo_id in ($syn_ids);";
             
+
             $response = $mysqli->query($sql);
             $facets = $response->fetch_all(MYSQLI_ASSOC);
 
@@ -195,6 +221,12 @@ class WfoFacets{
         // flag when we indexed it
         $solr_doc->facets_last_indexed_i = time();
 
+        // absolutely refuese to index something that isn't accepted
+        if($solr_doc->role_s != 'accepted'){
+            echo "\nTrying to index non-accepted taxon.\n";
+            exit;
+        }
+
         return $solr_doc;
 
 
@@ -210,11 +242,29 @@ class WfoFacets{
         $tree['all'] = array();
         $tree['path'] = array();
         $tree['synonyms'] = array();
-
         $tree['target'] = $index->getDoc($wfo_id);
 
-        // nothing found so just get out of here
+        // if we haven't got the target by the doc id maybe it is a deduplicated wfo_id?
+        if(!$tree['target']){
+
+            $solr_query = array(
+                'query' => "wfo_id_deduplicated_ss:$wfo_id",
+                'filter' => array("classification_id_s:" . WFO_DEFAULT_VERSION)
+            );
+            $solr_response = $index->getSolrResponse($solr_query);
+            if(isset($solr_response->response->docs) && $solr_response->response->docs){
+                $tree['target'] = $solr_response->response->docs[0];
+            }
+
+        }
+
+        // still nothing found so just get out of here
         if(!$tree['target'])return $tree;
+
+        // no structure for unplaced names
+        if($tree['target']->role_s == 'unplaced' || !isset($tree['target']->name_ancestor_path)){
+            return $tree;
+        }
 
         $query = array(
             'query' => "name_ancestor_path:{$tree['target']->name_ancestor_path}", // everything in this tree of names

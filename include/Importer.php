@@ -37,7 +37,7 @@ class Importer{
         
     public function __sleep(){
         fclose($this->file);
-        return array('filePath', 'overwrite', 'sourceId', 'facetValue', 'offset', 'created');
+        return array('filePath', 'overwrite', 'sourceId', 'facetValueId', 'offset', 'created');
     }
     
     public function __wakeup(){
