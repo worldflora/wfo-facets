@@ -342,6 +342,7 @@ class WfoFacets{
                 `name` as 'name', 
                 `description` as 'description',
                 `link_uri` as 'link_uri',
+                `code` as 'code',
                 concat('wfo-f-', `facet_id`) as facet_id 
                 FROM facet_values 
                 WHERE facet_id = $facet_id
@@ -359,8 +360,8 @@ class WfoFacets{
 
         $index = new SolrIndex();
         $response = $index->saveDocs($solr_docs, true);
-        echo "<pre>";
-        print_r($response);
+ //       echo "<pre>";
+ //       print_r($response);
 
     }
 
@@ -388,6 +389,8 @@ class WfoFacets{
 
         $index = new SolrIndex();
         $response = $index->saveDocs($solr_docs, true);
+     //   echo "<pre>";
+     //   print_r($solr_docs);
 
     }
 
