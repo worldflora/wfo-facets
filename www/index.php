@@ -5,7 +5,7 @@
 <h1>WFO Plant List: Facet Service</h1>
 
 <p class="lead">
-    Faceted searching is very common in information retrieval system such as internet shopping sites.
+    Faceted searching is very common in information retrieval systems such as internet shopping sites.
     It enables the user to restrict their search to items that have a particular feature or set of features - a
     certain colour or size for example.
     It would be very useful to subset the list of over 400,000 recognized taxa in the WFO Plant List in a

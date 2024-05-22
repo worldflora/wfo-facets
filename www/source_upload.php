@@ -16,7 +16,7 @@ if($_POST && isset($_FILES["input_file"]) && Authorisation::canEditSourceData($s
 
     // load it all in the session because we will run through 
     // these things in ajax calls.
-    $importer = new Importer($input_file_path, isset($_POST["overwrite_checkbox"]) ? true : false, $source_id, $facet_value);
+    $importer = new Importer($input_file_path, isset($_POST["overwrite_checkbox"]) ? true : false, $source_id, $facet_value['facet_value_id']);
     $_SESSION['importer'] = serialize($importer);
     $render_upload_progress = true;
 
