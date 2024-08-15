@@ -7,16 +7,19 @@ https://en.wikipedia.org/wiki/Faceted_classification
 
 ## Design
 
-We need to make sets of taxa which have particular attributes or characteristics. e.g. List all the trees. List all the plants in Belgium. List all the trees in Belgium. etc. To do this we need a common, community curated vocabulary of attribute names. We use Wikidata for this. In fact we go to the extreme. The application only defines  the relationship between WFO IDs and Wikidata Q numbers. It caches some display strings locally but this is only for performance purposes. All entities are described elsewhere. This means it will be easy to internationalize/localize human facing interfaces. It will also facilitate possible ingestion of data into Wikidata at some point in the future should that be required.
+We need to make subsets of taxa which have particular attributes. e.g. List all the trees. List all the plants in Belgium. List all the trees in Belgium. etc. To do this we need a vocabulary of attributes and then expert curated lists of what taxa possess attributes (i.e. tree experts to maintain the tree list and Belgium experts to maintain the list of what occurs in Belgium).
 
-## Facets and Facet Values
+### Facets, Facet Values and Data Sources
 
-The categories that taxa are placed in are organized into Facets and Facet Values. These are synonymous to Character and Character States often used in identification keys but the facetting terminology is adopted to show the primary purpose is information retrieval not identification.
+The attributes that taxa  possess and are used for subsetting are organized as Facets and Facet Values. These are synonymous to character and character states often used in identification keys but the faceting terminology is adopted to show the primary purpose is information retrieval not identification. 'Habit' is an example of a facet and 'tree' of facet value.
 
-An example of a Facet is Country ([Q25275](https://www.wikidata.org/wiki/Q889)) and a Value of that facet is Afghanistan ([Q889](https://www.wikidata.org/wiki/Q889)).
+The expert group who maintain the association between a name and a facet value are called the Data Source. A Data Source is a single list of names that possess a facet value. An organisation might be responsible for multiple Data Sources. The DA for the facet value "IUCN Category:Critically Endangered" would be the IUCN's list of critically endangered plant species. The DA for "IUCN Category:Least Concern" would be the IUCN's list of plants of least concern. In this example one organisation, IUCN, would be responsible for multiple data sources.
 
+A facet value may have multiple DAs. The World Checklist of Vascular plants supplies distribution data that can be rendered as ISO countries DA
 
-## Names, Taxa and Inheritance of Facet Values
+Each facet value might have multiple Data Source. 
+
+### Names, Taxa and Inheritance of Facet Values
 
 Facets are linked to __Names__ not Taxa. The facet service holds no knowledge of the placement of names within a taxonomy. This is for two reasons:
 
@@ -26,26 +29,27 @@ Facets are linked to __Names__ not Taxa. The facet service holds no knowledge of
 During the process of indexing the facet service will use the WFO Plant List index to calculate the facet values for a particular __Taxon__. The Plant List will provide the taxonomic placement of names and the facet service will follow these rules:
 
 1. Starting at the root of the classification and working down the hierarchy to the target taxon each facet value of each __name__ encountered will be added to the list of facet values for the taxon. This means that all the species within a family of trees don't individually have to be scored as trees.
-2. If the facet scoring has the _negated_ flag set it will be removed from the list. Thus an entire family could be scored as having four petals but that character negated for the one six petaled genus and its species.
-3. Facet values of the immediate synonyms of the taxon will be added to the taxon unless they are negated. A negated value in a synonym does not negate the value of the accepted name.
+2. Facet values of the immediate synonyms of the taxon will be added to the taxon.
 
-This algorithm expands on our knowledge of the hierarchy without getting overly complex and leading to unexpected consequences as might occur if we included all the synonyms of all the parent taxa or subtaxa.
+This algorithm expands on our knowledge of the hierarchy without getting overly complex and leading to unexpected consequences as might occur if we included all the synonyms of all the parent taxa or subtaxa. By and large species (or their synonyms) will be scored to facet values. Occassionally genera or families will be scored for facet values that are uniform for all species.
 
+### Import formats
 
-## Import formats
+Lists are maintained directly through the user interface or by providing CSV files. These CSV files are either uploaded or pulled from a URL. The first column of the CSV file should contain valid ten digit WFO IDs. Any other values are ignored. Any other columns in the CSV file are ignored. The [name matching tool](https://list.worldfloraonline.org/matching.php) produces files in the right format to be uploaded to the facet service.
 
-Import formats are very simple.
+### Implementation
 
-Facets and their facet values are imported as a CSV file with the first column being the facet Q number and the second column being the Q number for the facet value. Further columns are ignored but useful for debugging.
+The facet server is implemented as a MySQL 8.* database with a PHP based web interface. This allows users and administrators to login and manage facets, facet values and sublists of names that have those facet values. The facet server calls an instance of the WFO Plant List application API to facilitate this. No nomenclatural or taxonomic data are stored in the facet server, only WFO IDs. There is, however, a caching of nomenclature in the server and in the clients browser for performance reasons. These caches are perioidally purged.
 
-Facet value scores are imported as a CSV file with the first column being a WFO ID, the second column being a facet value Q number and the third column being the negated flag (0/1) . Subsequent columns are ignored. The source for the assertions is also represented as a Q number. It is placed at the end of the file name following an underscore. e.g. country_distributions_Q25275.csv is the sourced from [Plants of the World Online](https://www.wikidata.org/wiki/Q47542613).
+At index time a script on the facet server calls a SOLR index directly and __updates__ the SOLR document for a taxon. This can either be done for individual taxa or as a batch process. This is a process of _decorating_ an existing index that was created from a WFO Plant List data release. The index already contains the nomenclatural and taxonomic information for the complete list of vascular plants and bryophytes. The facet indexing process adds fields containing data from the facet server to these existing SOLR documents.
 
-The first line of both files is assumed to be a header line and ignored.
+For performance reasons the data that is added to each taxon document for faceted searching is just the facet IDs and IDs representing the provenance. A separate process makes SOLR documents containing labels for facet, facet values and data sources. This acts as a data dictionary so that we can render the facet information in a human readable way. Additionally label data is added to each taxon document as text so that those documents will be found in free text searches using words in facet labels.
 
-It is not necessary for facet values to have already been imported in order for names to be scored to them. Scorings could use entirely novel values that are later attributed to facets so they become available for export. The curation of facet values into facets is a role of the facet service.
 
 
 ## Facet Ideas
+
+Below is just a brain dump of some ideas for facets
 
 ### IUCN - Global Threat Level
 - Least concern etc

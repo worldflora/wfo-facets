@@ -14,7 +14,7 @@ $offset = 0;
 $index = new SolrIndex();
 $updated_docs = array();
 
-if($argv[1]) $offset = $argv[1];
+if(@$argv[1]) $offset = $argv[1];
 
 $solr_query = array(
     'query' => '*:*',

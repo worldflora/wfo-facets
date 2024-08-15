@@ -1,7 +1,18 @@
 <?php
     require_once('header.php');
-?>
+    
+    // if god the can create new facets
+    if($user && $user['role'] == 'god'){
+        echo '<div style="float: right;">';
+        echo '<a class="btn btn-sm btn-success" href="sources_index.php"
+            data-bs-toggle="tooltip"
+            data-bs-placement="left"
+            title="Update the index with the label info for the sources." 
+            role="button">Index Source Labels</a>';
+        echo '</div>';
+    } // is god
 
+?>
 
 <h1>Sources</h1>
 
@@ -52,7 +63,7 @@
         echo '</li>';
     }
     
-    // can add a new user if god
+    // can add a new source if god
     if($user && $user['role'] == 'god'){
         echo '<li class="list-group-item" style="text-align: right;">';
         echo 'Create a new source via the facet value the source will be based on.';

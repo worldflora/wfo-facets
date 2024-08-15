@@ -15,9 +15,9 @@ class SolrIndex{
         }else{
             $record_id = $id;
         }
-        
+
         // load it by id
-        $solr_query_uri = SOLR_QUERY_URI . '/get?id=' . $record_id;
+        $solr_query_uri = SOLR_QUERY_URI . '/get?id=' . trim($record_id);
         $ch = $this->getCurlHandle($solr_query_uri);
         $response = $this->runCurlRequest($ch);
         if(isset($response->body)){

@@ -243,7 +243,7 @@ class WfoFacets{
         $tree['path'] = array();
         $tree['synonyms'] = array();
         $tree['target'] = $index->getDoc($wfo_id);
-
+        
         // if we haven't got the target by the doc id maybe it is a deduplicated wfo_id?
         if(!$tree['target']){
 
@@ -257,6 +257,7 @@ class WfoFacets{
             }
 
         }
+
 
         // still nothing found so just get out of here
         if(!$tree['target'])return $tree;

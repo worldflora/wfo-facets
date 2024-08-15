@@ -1,5 +1,18 @@
 <?php
     require_once('header.php');
+
+    // if god the can create new facets
+    if($user && $user['role'] == 'god'){
+        echo '<div style="float: right;">';
+        echo '<a class="btn btn-sm btn-success" href="facets_index.php" 
+            data-bs-toggle="tooltip"
+            data-bs-placement="left"
+            title="Update the index with the label info the facets and facet values." 
+        role="button">Index Facet Labels</a>';
+        echo '</div>';
+    } // is god
+
+
 ?>
 
 
