@@ -13,6 +13,7 @@ $page_size = 1000;
 $offset = 0;
 $index = new SolrIndex();
 $updated_docs = array();
+$run_start = new DateTime(); 
 
 if(@$argv[1]) $offset = $argv[1];
 
@@ -38,10 +39,10 @@ while(true){
     $counter = 0;
     foreach ($solr_response->response->docs as $doc) {
         $counter++;
-        echo "\t$counter\t{$doc->wfo_id_s}\t{$doc->full_name_string_plain_s}\t";
+       // echo "\t$counter\t{$doc->wfo_id_s}\t{$doc->full_name_string_plain_s}\t";
         $new_doc = WfoFacets::getTaxonIndexDoc($doc->wfo_id_s);
         if($new_doc) $updated_docs[] = $new_doc;
-        echo "done\n";
+        // echo "done\n";
     }
 
     echo "Page ends\n\n";
@@ -72,6 +73,9 @@ while(true){
     if($offset > $solr_response->response->numFound) break;
 
 }
+
+$now = new DateTime();
+$total_duration = $now->getTimestamp() - $run_start->getTimestamp();
 
 $mysqli->query("INSERT INTO indexing_log (`kind`, `count`, `duration`) VALUES ('taxon',{$solr_response->response->numFound}, $total_duration);");
 echo $mysqli->error;
