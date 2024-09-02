@@ -17,6 +17,8 @@ $response = $mysqli->query("SELECT * FROM sources
         (harvest_frequency = 'weekly' AND harvest_last <= CURRENT_DATE() - INTERVAL 1 WEEK)
         OR
         (harvest_frequency = 'daily' AND harvest_last <= CURRENT_DATE() - INTERVAL 1 DAY)
+        OR
+        harvest_last is null
     )
     ORDER BY harvest_last;");
 

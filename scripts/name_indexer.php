@@ -14,7 +14,7 @@ $response = $mysqli->query("SELECT distinct(wfo_id) FROM wfo_facets.wfo_scores w
 
 while($row = $response->fetch_assoc()){
 
-    echo "{$row['wfo_id']}\n";
+    //echo "{$row['wfo_id']}\n";
     $solr_docs[] = WfoFacets::getTaxonIndexDoc($row['wfo_id']);
 
     if(count($solr_docs) > 100){
