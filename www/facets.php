@@ -11,7 +11,7 @@
         role="button">Index Facet Labels</a>';
         echo '</div>';
     } // is god
-
+ 
 
 ?>
 
