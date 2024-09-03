@@ -31,8 +31,11 @@ foreach($sources as $source){
     $now = time();
     $input_file_path = "../data/session_data/harvester/source_{$source['id']}";
     @mkdir($input_file_path, 0777,true);
+    
     $input_file_path .= "/$now.csv";
+    
     if(file_put_contents($input_file_path, file_get_contents(trim($source['harvest_uri'])))){
+
         $importer = new Importer($input_file_path, $source['harvest_overwrites'] == 1 ? true : false, $source['id'], $source['facet_value_id']);
 
         $page_size = 100;
@@ -47,6 +50,8 @@ foreach($sources as $source){
 
     }else{
         echo "Something went wrong writing the file\n";
+        echo "Data url: {$source['harvest_uri']} \n";
+        echo "File path: {$input_file_path} \n";
     }
 
 }
