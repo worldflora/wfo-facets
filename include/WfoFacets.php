@@ -92,6 +92,7 @@ class WfoFacets{
             $sql = "SELECT 
                 f.id as facet_id,
                 f.`name` as facet_name,
+                f.`heritable` as heritable,
                 fv.id as facet_value_id, 
                 fv.`name` as facet_value_name,
                 s.id as source_id,
@@ -106,6 +107,11 @@ class WfoFacets{
             $facets = $response->fetch_all(MYSQLI_ASSOC);
               
             foreach($facets as $facet){
+
+                // is this facet heritable?
+                // if it isn't heritable then we should only proceed if this
+                // is actually the name in question (not one of its ancestors)
+                if(!$facet['heritable'] && $wfo !== $solr_doc->wfo_id_s) continue;
 
                 $facet_value_id = $facet['facet_id'] . '-' . $facet['facet_value_id'];
 

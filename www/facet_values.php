@@ -16,7 +16,13 @@
         echo '</div>';
 
     echo "<h1>{$facet['name']}</h1>";
-    echo "<p class=\"lead\">{$facet['description']}</p>";
+    echo "<p class=\"lead\">{$facet['description']}";
+
+    if($facet['heritable']){
+        echo "<strong> [Heritable]</strong>";
+    }
+
+    echo '</p>';
 
     echo '<ul class="list-group">';
 
