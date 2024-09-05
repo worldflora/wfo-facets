@@ -1,0 +1,8 @@
+
+# recommended setting for cron
+
+# backup of database
+52 05 * * 6 cd /var/wfo-list/facets/scripts && php cron_db_backup.sh > /dev/null 2>&1
+
+# clear out session data
+22 05 * * 6 cd /var/wfo-list/facets/scripts && php cron_purge_session_data.sh > /dev/null 2>&1
