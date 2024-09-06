@@ -385,7 +385,8 @@ class WfoFacets{
             'wfo-facet-source' as kind, 
             `name` as 'name', 
             `description` as 'description',
-            `link_uri` as link_uri
+            `link_uri` as link_uri,
+            `harvest_uri` as harvest_uri
             FROM sources ORDER BY `name`");
         $sources = $response->fetch_All(MYSQLI_ASSOC);
         $response->close();
