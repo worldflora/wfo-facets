@@ -12,13 +12,16 @@ $solr_docs = array();
 
 $response = $mysqli->query("SELECT distinct(wfo_id) FROM wfo_facets.wfo_scores where created > CURRENT_DATE() - INTERVAL 1 DAY");
 
+$total_rows = $response->num_rows;
+$counted = 0;
 while($row = $response->fetch_assoc()){
 
     //echo "{$row['wfo_id']}\n";
     $solr_docs[] = WfoFacets::getTaxonIndexDoc($row['wfo_id']);
+    $counted++;
 
-    if(count($solr_docs) > 100){
-        echo "Saving ...\n";
+    if(count($solr_docs) > 1000){
+        echo "Saving:\t". number_format($counted, 0) . "\t" . number_format($counted/$total_rows * 100 , 0) . "%\n";
         $solr_response = $index->saveDocs($solr_docs, true);
         $solr_docs = array();
     }
