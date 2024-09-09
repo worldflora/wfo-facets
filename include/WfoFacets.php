@@ -44,11 +44,13 @@ class WfoFacets{
         // get the whole taxon tree from SOLR query
         $taxon_tree = WfoFacets::getTaxonTree($wfo_id);
 
-        if(!$taxon_tree['target']) return null; // possibly duff wfo id
+        if(!$taxon_tree['target']){
+            echo "Couldn't index $wfo_id !\n";// possibly duff wfo id
+        }; 
 
         // if there is no current usage then it isn't placed
         // and we return false - no indexing
-        if($taxon_tree['target']->role_s == 'unplaced' || $taxon_tree['target']->role_s == 'deprecated') return false;
+        if(!$taxon_tree['target'] || $taxon_tree['target']->role_s == 'unplaced' || $taxon_tree['target']->role_s == 'deprecated') return false;
 
         // check this is an accepted name.
         // if not then index the accepted name or nothing

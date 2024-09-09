@@ -20,11 +20,7 @@ while($row = $response->fetch_assoc()){
 
     //echo "{$row['wfo_id']}\n";
     $doc = WfoFacets::getTaxonIndexDoc($row['wfo_id']);
-
-    if(!$doc){
-        echo "No doc generated. Is this a good wfo id? {$row['wfo_id']}\n";
-        continue;
-    }
+    if(!$doc) continue;
 
     $solr_docs[] = $doc;
 
