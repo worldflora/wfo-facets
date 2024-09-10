@@ -11,7 +11,7 @@ $out['timestamp'] = time();
 $importer = unserialize(@$_SESSION['importer']);
 
 if($importer){
-    $rows_processed = $importer->import(10);
+    $rows_processed = $importer->import(100);
     
     // present a nice progress time
     $now = time();

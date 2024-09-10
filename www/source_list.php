@@ -12,7 +12,7 @@ if(@$_REQUEST['filter']){
     $filter_clause = '';
 }
 
-$sql = "SELECT ws.wfo_id FROM wfo_scores as ws LEFT JOIN name_cache as nc ON ws.wfo_id = nc.wfo_id WHERE ws.source_id = $source_id $filter_clause ORDER BY nc.`name` LIMIT 100";
+$sql = "SELECT ws.wfo_id FROM wfo_scores as ws LEFT JOIN name_cache as nc ON ws.wfo_id = nc.wfo_id WHERE ws.source_id = $source_id $filter_clause ORDER BY nc.`name` LIMIT 30";
 
 $response = $mysqli->query($sql);
 $rows = $response->fetch_all(MYSQLI_ASSOC);

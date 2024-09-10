@@ -33,3 +33,4 @@ while($row = $response->fetch_assoc()){
 }
 echo "Saving last one ...\n";
 $solr_response = $index->saveDocs($solr_docs, true);
+echo "All done!\n";
