@@ -23,9 +23,15 @@ if(!$file_path){
     exit;
 }
 
+if(count($argv) > 2 && $argv[2] == 'tabs'){
+    $separator = "\t";
+}else{
+    $separator = ',';
+}
+
 $in = fopen($file_path, 'r');
 
-$header = fgetcsv($in);
+$header = fgetcsv($in, null, $separator);
 
 $fields = array();
 
@@ -48,7 +54,7 @@ foreach($header as $head){
 
 // lets work through the file and see what the values are like
 $line_count = 0;
-while($line = fgetcsv($in)){
+while($line = fgetcsv($in, null, $separator)){
 
     if(count($line) < count($fields)){
         echo "\n Line too short\n";
@@ -112,7 +118,7 @@ echo $sql;
 
 // now lets import the data
 rewind($in);
-$header = fgetcsv($in); // just to dump the header
+$header = fgetcsv($in, null, $separator); // just to dump the header
 
 
 // prepare the statement
@@ -123,7 +129,7 @@ $stmt = $mysqli->prepare($sql);
 
 $insert_count =0;
 echo "\nProgress :      ";  // 5 characters of padding at the end
-while($line = fgetcsv($in)){
+while($line = fgetcsv($in,null, $separator)){
 
     $line = array_slice($line, 0, count($fields));
 

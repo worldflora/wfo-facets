@@ -4,12 +4,16 @@
     $source_id = (int)@$_REQUEST['source_id'];
 
         
-    $response = $mysqli->query("SELECT * FROM `sources` WHERE id = $source_id");
+    $response = $mysqli->query("SELECT * FROM `sources` as s JOIN `facet_value_sources` as fvs on s.id = fvs.source_id WHERE id = $source_id");
     $source = $response->fetch_assoc();
     $response->close();
 
     // load up the facet value we are looking at
-    $response = $mysqli->query("SELECT f.id as facet_id, fv.id as facet_value_id, f.name as facet_name, fv.name as facet_value_name FROM facet_values as fv JOIN facets as f on fv.facet_id = f.id WHERE fv.id = {$source['facet_value_id']};");
+    $response = $mysqli->query("SELECT 
+        f.id as facet_id, fv.id as facet_value_id, f.name as facet_name, fv.name as facet_value_name 
+        FROM facet_values as fv 
+        JOIN facets as f on fv.facet_id = f.id 
+        WHERE fv.id = {$source['facet_value_id']};");
     $facet_value = $response->fetch_assoc();
     $response->close();
 
@@ -77,36 +81,36 @@
 
     <!-- LIST DISPLAY -->
     <div class="tab-pane fade show active" id="list" role="tabpanel" aria-labelledby="list-tab">
-        <?php require_once('source_list.php'); ?>
+        <?php require_once('facet_source_list.php'); ?>
     </div>
     <?php
      if(Authorisation::canEditSourceData($source_id)){
 ?>
     <!-- ADD SINGLE -->
     <div class=" tab-pane fade" id="add" role="tabpanel">
-        <?php require_once('source_add.php'); ?>
+        <?php require_once('facet_source_add.php'); ?>
     </div>
 
     <!-- UPLOAD -->
     <div class="tab-pane fade" id="upload" role="tabpanel">
-        <?php require_once('source_upload.php'); ?>
+        <?php require_once('facet_source_upload.php'); ?>
     </div>
 
     <!-- HARVEST -->
     <div class="tab-pane fade" id="harvest" role="tabpanel">
-        <?php require_once('source_harvest.php'); ?>
+        <?php require_once('facet_source_harvest.php'); ?>
     </div>
 
     <!-- PROPERTIES -->
     <div class="tab-pane fade" id="properties" role="tabpanel">
-        <?php require_once('source_properties.php'); ?>
+        <?php require_once('facet_source_properties.php'); ?>
     </div>
     <?php
      } // can edit
 ?>
     <!-- DOWNLOAD -->
     <div class="tab-pane fade" id="download" role="tabpanel">
-        <?php require_once('source_download.php'); ?>
+        <?php require_once('facet_source_download.php'); ?>
     </div>
 
     <?php
@@ -114,7 +118,7 @@
 ?>
     <!-- USERS -->
     <div class="tab-pane fade" id="users" role="tabpanel">
-        <?php require_once('source_users.php'); ?>
+        <?php require_once('facet_source_users.php'); ?>
     </div>
     <?php
      } // is god
@@ -144,7 +148,7 @@ listTab.addEventListener('shown.bs.tab', event => {
     // it sets it to true so that clicking on the list tab 
     // will refresh the page
     if (listChanged) {
-        document.location = 'source.php?tab=list-tab&source_id=<?php echo $source_id ?>'
+        document.location = 'facet_source.php?tab=list-tab&source_id=<?php echo $source_id ?>'
     }
 });
 </script>

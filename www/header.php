@@ -32,7 +32,7 @@
 
     <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="index.php">WFO Facets</a>
+            <a class="navbar-brand" href="index.php">WFO:CMS</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse"
                 aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -40,12 +40,20 @@
             <div class="collapse navbar-collapse" id="navbarCollapse">
                 <ul class="navbar-nav me-auto mb-2 mb-md-0">
                     <li class="nav-item">
+                        <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'sources.php' ? 'active': '';  ?> "
+                            href="sources.php">Sources</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'facets.php' ? 'active': '';  ?>"
                             aria-current="page" href="facets.php">Facets</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'sources.php' ? 'active': '';  ?> "
-                            href="sources.php">Sources</a>
+                        <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'snippets.php' ? 'active': '';  ?>"
+                            aria-current="page" href="snippets.php">Snippets</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'images.php' ? 'active': '';  ?>"
+                            aria-current="page" href="images.php">Images</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'index_state.php' ? 'active': '';  ?> "

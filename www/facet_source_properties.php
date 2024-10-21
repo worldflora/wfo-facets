@@ -9,7 +9,7 @@ if(@$_POST && $_POST['properties_button'] &&  Authorisation::canEditSourceData($
 
     $mysqli->query("UPDATE `sources` SET `name` = '$name_safe', `description` = '$description_safe', `link_uri` = '$uri_safe' WHERE id = $source_id;");
 
-    echo "<script>document.location = 'source.php?source_id={$source_id}&tab=properties-tab'</script>";
+    echo "<script>document.location = 'facet_source.php?source_id={$source_id}&tab=properties-tab'</script>";
 }
 
 $name = $source['name'];
@@ -23,7 +23,7 @@ $link_uri = $source['link_uri'];
     Edit the metadata fields for this data source.
 </p>
 
-<form method="POST" action="source.php">
+<form method="POST" action="facet_source.php">
 
     <input type="hidden" name="source_id" value="<?php echo $source_id ?>" />
     <input type="hidden" name="tab" value="properties-tab" />

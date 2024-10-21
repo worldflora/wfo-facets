@@ -8,7 +8,7 @@ $search = @$_REQUEST['search'];
 ?>
 
 
-<form method="POST" action="source_add.php">
+<form method="POST" action="facet_source_add.php">
     <div class="mb-3">
         <input type="txt" class="form-control" id="add_search" name="search" value="<?php echo $search ?>"
             placeholder="Type the first few letters of the plant name for suggestions" />

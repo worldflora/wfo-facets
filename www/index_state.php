@@ -78,7 +78,7 @@ document.getElementById("state_search").onkeyup = function(e) {
         echo "<li>";
         echo "<a href=\"facet_values.php?facet_id={$row['facet_id']}\">{$row['facet_value_name']}</a>";
         echo "<strong> from </strong>";
-        echo "<a href=\"source.php?source_id={$row['source_id']}\">{$row['source_name']}</a>";
+        echo "<a href=\"facet_source.php?source_id={$row['source_id']}\">{$row['source_name']}</a>";
         echo "</li>";
 
     }

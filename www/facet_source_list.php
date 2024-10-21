@@ -28,7 +28,7 @@ $response->close();
 <script>
 const filter_on_load = '<?php echo $filter ?>';
 </script>
-<form method="GET" action="source.php">
+<form method="GET" action="facet_source.php">
     <input type="hidden" name="source_id" value="<?php echo $source_id; ?>" />
     <input type="hidden" name="tab" value="list-tab" />
     <div class="mb-3">

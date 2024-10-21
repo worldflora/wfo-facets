@@ -27,7 +27,7 @@ if(@$_GET['user_id'] &&  @$_GET['source_id']){
         }
     }
 
-    header("Location: source.php?source_id=$source_id&tab=users-tab");
+    header("Location: facet_source.php?source_id=$source_id&tab=users-tab");
     exit;
 
 }

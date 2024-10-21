@@ -57,7 +57,7 @@
     <div class="alert alert-warning" role="alert"><strong>Downloading ... </strong></div>
 </div>
 <div>
-    <a href="source.php?tab=harvest-tab&source_id=<?php echo $source_id ?>">Cancel</a>
+    <a href="facet_source.php?tab=harvest-tab&source_id=<?php echo $source_id ?>">Cancel</a>
 </div>
 <script>
 // call the progress bar every second till it is complete
@@ -69,7 +69,7 @@ callProgressBar(harvest_div);
         }else{
 ?>
 
-<form method="POST" action="source.php">
+<form method="POST" action="facet_source.php">
 
     <input type="hidden" name="tab" value="harvest-tab" />
     <input type="hidden" name="source_id" value="<?php echo $source_id ?>" />

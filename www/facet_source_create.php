@@ -29,12 +29,22 @@
             $description_safe = $mysqli->real_escape_string($description);
             $link_uri_safe = $mysqli->real_escape_string($link_uri);
 
-            $mysqli->query("INSERT INTO `sources` (`name`, `description`, `link_uri`, `facet_value_id`) VALUES ('$name_safe', '$description_safe', '$link_uri_safe', $facet_value_id);");
-            if($mysqli->error){
+            $mysqli->begin_transaction();
+
+            try{
+                $mysqli->query("INSERT INTO `sources` (`name`, `description`, `link_uri`) VALUES ('$name_safe', '$description_safe', '$link_uri_safe');");
+                $source_id = $mysqli->insert_id;
+                $mysqli->query("INSERT INTO `facet_value_sources` (`source_id`, `facet_value_id`) VALUES ( $source_id, $facet_value_id);");
+                $mysqli->commit();
+                
+                echo '<div class="alert alert-success" role="alert">Facet "' . $name . '" created.</div>';
+                echo "<script>window.location.href = \"facet_source.php?source_id={$source_id}\"</script>";
+
+            } catch (mysqli_sql_exception $exception) {
+                $mysqli->rollback();
                 echo '<div class="alert alert-danger" role="alert">Database insert failed.</div>';
                 echo '<div class="alert alert-danger" role="alert">' . $mysqli->error . '</div>';
-            }else{
-                echo '<div class="alert alert-success" role="alert">Facet "' . $name . '" created.</div>';
+                print_r($exception);
             }
                 
         }else{
@@ -44,12 +54,12 @@
 
 ?>
 
-<h1>Create a new source</h1>
+<h1>Create a new facet value source</h1>
 <p class="lead">
     This is a new source for
     <strong><?php echo "{$facet_value['facet_name']}: {$facet_value['facet_value_name']}" ?></strong>.
 </p>
-<form method="POST" action="source_create.php">
+<form method="POST" action="facet_source_create.php">
 
     <input type="hidden" name="facet_value_id" value="<?php echo $facet_value_id ?>" />
 

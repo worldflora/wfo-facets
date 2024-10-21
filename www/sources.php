@@ -22,7 +22,7 @@
 
 <ul class="list-group">
     <?php
-    $response = $mysqli->query("SELECT * FROM `sources` ORDER BY `name`;");
+    $response = $mysqli->query("SELECT * FROM `sources` as s JOIN `facet_value_sources` as fvs on s.id = fvs.source_id ORDER BY `name`;");
     $sources = $response->fetch_all(MYSQLI_ASSOC);
     $response->close();
 
@@ -37,7 +37,7 @@
         echo '<div class="row">';
         
         echo '<div class="col">';
-        echo "<a href=\"source.php?source_id={$s['id']}\"><h3>{$s['name']}</h3></a>";
+        echo "<a href=\"facet_source.php?source_id={$s['id']}\"><h3>{$s['name']}</h3></a>";
         echo "<p><strong>Source for:</strong> <a href=\"facet_values.php?facet_id={$facet_value['facet_id']}\">{$facet_value['facet_name']}: {$facet_value['facet_value_name']}</a></p>";
         echo "<p>";
         echo $s['description'];

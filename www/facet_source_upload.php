@@ -60,7 +60,7 @@ if($_POST && isset($_FILES["input_file"]) && Authorisation::canEditSourceData($s
     <div class="alert alert-warning" role="alert"><strong>Uploading ... </strong></div>
 </div>
 <div>
-    <a href="source.php?tab=upload-tab&source_id=<?php echo $source_id ?>">Cancel</a>
+    <a href="facet_source.php?tab=upload-tab&source_id=<?php echo $source_id ?>">Cancel</a>
 </div>
 <script>
 // call the progress bar every second till it is complete
@@ -72,7 +72,7 @@ callProgressBar(upload_div);
         }else{
 ?>
 
-<form method="POST" action="source.php" enctype="multipart/form-data">
+<form method="POST" action="facet_source.php" enctype="multipart/form-data">
     <input type="hidden" name="tab" value="upload-tab" />
     <input type="hidden" name="source_id" value="<?php echo $source_id ?>" />
 
