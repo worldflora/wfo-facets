@@ -20,7 +20,7 @@ $link_uri = $source['link_uri'];
 
 
 <p class="lead">
-    Edit the metadata fields for this data source.
+    Edit the metadata fields for this facet data source.
 </p>
 
 <form method="POST" action="facet_source.php">

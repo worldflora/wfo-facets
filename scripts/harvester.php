@@ -3,24 +3,26 @@
 require_once('../config.php');
 require_once('../include/SolrIndex.php');
 require_once('../include/WfoFacets.php');
-require_once('../include/Importer.php');
+require_once('../include/ImporterFacets.php');
 require_once('../include/NameCache.php');
 
 // this will run the harvester on sources that need it.
 
-$response = $mysqli->query("SELECT * FROM sources
-    WHERE (harvest_frequency != 'never' AND length(harvest_uri) > 0)
+$response = $mysqli->query("SELECT * 
+	FROM sources as s 
+    JOIN facet_value_sources as fvs on s.id = fvs.source_id
+    WHERE (s.harvest_frequency != 'never' AND length(s.harvest_uri) > 0)
     AND
     (
-        (harvest_frequency = 'monthly' AND harvest_last <= CURRENT_DATE() - INTERVAL 1 MONTH)
+        (s.harvest_frequency = 'monthly' AND s.harvest_last <= CURRENT_DATE() - INTERVAL 1 MONTH)
         OR
-        (harvest_frequency = 'weekly' AND harvest_last <= CURRENT_DATE() - INTERVAL 1 WEEK)
+        (s.harvest_frequency = 'weekly' AND s.harvest_last <= CURRENT_DATE() - INTERVAL 1 WEEK)
         OR
-        (harvest_frequency = 'daily' AND harvest_last <= CURRENT_DATE() - INTERVAL 1 DAY)
+        (s.harvest_frequency = 'daily' AND s.harvest_last <= CURRENT_DATE() - INTERVAL 1 DAY)
         OR
-        harvest_last is null
+        s.harvest_last is null
     )
-    ORDER BY harvest_last;");
+    ORDER BY s.harvest_last;");
 
 $sources = $response->fetch_all(MYSQLI_ASSOC);
 $response->close();
@@ -36,7 +38,7 @@ foreach($sources as $source){
     
     if(file_put_contents($input_file_path, file_get_contents(trim($source['harvest_uri'])))){
 
-        $importer = new Importer($input_file_path, $source['harvest_overwrites'] == 1 ? true : false, $source['id'], $source['facet_value_id']);
+        $importer = new ImporterFacets($input_file_path, $source['harvest_overwrites'] == 1 ? true : false, $source['id'], $source['facet_value_id']);
 
         $page_size = 100;
         $count = 0;

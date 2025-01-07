@@ -33,7 +33,7 @@ if(@$_GET['user_id'] &&  @$_GET['source_id']){
 }
 
 
-echo "<p class=\"lead\">Add or remove users to this source.</p>";
+echo "<p class=\"lead\">Add or remove the users who can edit the data in this data source.</p>";
 
 // fetch all users and flag if they own this or not
 

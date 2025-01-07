@@ -1,14 +1,24 @@
 <?php
     require_once('header.php');
     
-    // if god the can create new facets
+    
     if($user && $user['role'] == 'god'){
         echo '<div style="float: right;">';
+
+        // if god the can index source labels
         echo '<a class="btn btn-sm btn-success" href="sources_index.php"
             data-bs-toggle="tooltip"
             data-bs-placement="left"
             title="Update the index with the label info for the sources." 
             role="button">Index Source Labels</a>';
+
+            // if god the can index source labels
+        echo '&nbsp;<a class="btn btn-sm btn-success" href="index_score_metadata.php"
+            data-bs-toggle="tooltip"
+            data-bs-placement="bottom"
+            title="Will update index with metadata on any scores since last indexing run." 
+            role="button">Index Scores Metadata</a>';
+
         echo '</div>';
     } // is god
 

@@ -52,10 +52,6 @@
                             aria-current="page" href="snippets.php">Snippets</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'images.php' ? 'active': '';  ?>"
-                            aria-current="page" href="images.php">Images</a>
-                    </li>
-                    <li class="nav-item">
                         <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'index_state.php' ? 'active': '';  ?> "
                             href="index_state.php">Indexed</a>
                     </li>

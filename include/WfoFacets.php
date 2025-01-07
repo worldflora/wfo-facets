@@ -488,4 +488,63 @@ class WfoFacets{
         return $out;
 
     }
+
+    public static function indexScores(){
+
+        global $mysqli;
+        $index = new SolrIndex();
+
+        // get the date of the last updated one in the index.
+        /*
+        $query = array(
+            'query' => "*:*", // everything in this tree of names
+            "limit" => 1, // big limit - not run out of memory theoretically could fail on stupid numbers of synonyms
+            "order" => "modified desc",
+            "fields" => array('modified'),
+            'filter' => array( 
+                "classification_id_s:" . WFO_DEFAULT_VERSION,
+                "kind_s:wfo-score-metadata",
+            )    
+        );
+        $docs = $index->getSolrDocs((object)$query);
+
+        if(!$docs || count($docs) < 1){
+            $modified_string = '1972-05-20T17:33:18Z';
+        }else{
+            $modified_string = $docs[0]->modified;
+        }
+        */
+
+        $modified_string = '1972-01-01T00:00:00Z';
+        $modified_date = new DateTime($modified_string);
+        $modified_sql = $modified_date->format('Y-m-d H:i:s');
+
+       
+        $sql = "SELECT * FROM `wfo_scores` WHERE `modified` > '{$modified_sql}' AND meta_json is not null ORDER BY modified;";
+        $response = $mysqli->query($sql, MYSQLI_USE_RESULT); // we allow for big result set
+
+        $page_counter = 0;
+
+        while($row = $response->fetch_assoc()){
+
+            $data = array(
+                'id' => 'wfo',
+                'kind_s' => 'wfo-score-metadata',
+                'wfo_id_s' => $row['wfo_id']
+            );
+
+
+        }
+
+
+
+
+        echo $sql;
+
+        // work through all the ones in the scores tables that have changes since that data 
+        // and add them in
+        
+        // need to include 
+
+    }
 }

@@ -196,16 +196,17 @@ function toggleListMembership(node, wfo, source_id, value_id) {
 
 }
 
-function callProgressBar(div) {
-    fetch("source_upload_progress.php")
+function callProgressBar(div, file_name) {
+    fetch(file_name)
         .then((response) => response.json())
         .then((json) => {
             div.innerHTML =
                 `<div class="alert alert-${json.level}" role="alert">${json.message}</div>`;
-            if (!json.complete) callProgressBar(div);
+            if (!json.complete) callProgressBar(div, file_name);
         });
     listChanged = true;
 }
+
 // define the GraphQL query string ahead of times
 const lookup_query =
     `query NameSearch($terms: String!){

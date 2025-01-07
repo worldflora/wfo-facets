@@ -3,7 +3,6 @@
 
     $source_id = (int)@$_REQUEST['source_id'];
 
-        
     $response = $mysqli->query("SELECT * FROM `sources` as s JOIN `facet_value_sources` as fvs on s.id = fvs.source_id WHERE id = $source_id");
     $source = $response->fetch_assoc();
     $response->close();
@@ -25,8 +24,8 @@
     }
     echo '</div>';
 
-    echo "<h1>{$source['name']}</h1>";
     echo "<p><a href=\"facet_values.php?facet_id={$facet_value['facet_id']}\">{$facet_value['facet_name']}: {$facet_value['facet_value_name']}</a>.</p>";
+    echo "<h1>{$source['name']}</h1>";
     echo "<p class=\"lead\">{$source['description']}</p>";
 
 

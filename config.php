@@ -20,14 +20,13 @@ define('SOLR_QUERY_URI', $solr_query_uri); // from wfo_secrets.php
 define('SOLR_USER', $solr_user); // from wfo_secrets.php
 define('SOLR_PASSWORD', $solr_password); // from wfo_secrets.php
 
-
 define('PLANT_LIST_GRAPHQL_URI', $plant_list_graphql_uri);
 
 
 // used for lookups and other services that don't want to 
 // trouble themselves with many versions of backbone
 // will normally be set to the most recent.
-define('WFO_DEFAULT_VERSION','2024-06');
+define('WFO_DEFAULT_VERSION','2024-12');
 
 // create and initialise the database connection
 $mysqli = new mysqli($db_host, $db_user, $db_password, $db_database);  

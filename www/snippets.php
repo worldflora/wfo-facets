@@ -2,7 +2,7 @@
 require_once('../include/language_codes.php');
 require_once('header.php');
 
-    // if god the can create new facets
+    // if god they can create new snippet sources
     if($user && $user['role'] == 'god'){
         echo '<div style="float: right;">';
         echo '&nbsp;<a 
@@ -20,6 +20,8 @@ require_once('header.php');
 
 <h1>Snippets</h1>
 <p>Snippets of text describing taxa.</p>
+
+<h2>Sources</h2>
 
 <table class="table">
 
@@ -53,8 +55,7 @@ $languages_string = "'" . implode("','", array_keys($language_codes)) . "'";
 
 $result = $mysqli->query("SELECT * 
     FROM snippet_sources as ss 
-    JOIN sources as s 
-    ON s.id = ss.source_id 
+    JOIN sources as s ON s.id = ss.source_id
     ORDER BY
         FIELD(`category`, 'publish',{$categories_string}),
         FIELD(`language`, 'publish',{$languages_string})    
@@ -64,20 +65,19 @@ while($row = $result->fetch_assoc()){
 
     echo "<tr>";
 
-    echo "<th scope=\"row\">{$row[source_id]}</th>";
+    echo "<th scope=\"row\"><a href=\"snippet_source.php?source_id={$row['source_id']}\">{$row['source_id']}</a></th>";
     echo "<td>{$row['category']}</td>";
-    echo "<td>{$row['language']}</td>";
+
+    $lang_label = $language_codes[$row['language']];
+    echo "<td>{$lang_label}</td>";
+    
     echo "<td>{$row['name']}</td>";
     echo "<td>{$row['description']}</td>";
-    
-    echo "</tr>";
-
-    print_r($row);
-    echo "<hr/>";
+    echo "<tr/>";
 }
 
 ?>
-
+</table>
 <?php
 require_once('footer.php');
 ?>

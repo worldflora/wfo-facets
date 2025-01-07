@@ -29,7 +29,7 @@
             $input_file_path .= "/$now.csv";
             file_put_contents($input_file_path, file_get_contents($harvest_uri));
 
-            $importer = new Importer($input_file_path, $harvest_overwrites ? true : false, $source_id, $facet_value['facet_value_id']);
+            $importer = new ImporterFacets($input_file_path, $harvest_overwrites ? true : false, $source_id, $facet_value['facet_value_id']);
             $_SESSION['importer'] = serialize($importer);
 
             $render_harvest_progress = true;
@@ -62,7 +62,7 @@
 <script>
 // call the progress bar every second till it is complete
 const harvest_div = document.getElementById('harvest_progress_bar');
-callProgressBar(harvest_div);
+callProgressBar(harvest_div, 'facet_source_upload_progress.php');
 </script>
 
 <?php

@@ -1,7 +1,7 @@
 <?php
 require_once('../config.php');
 require_once('../include/NameCache.php');
-require_once('../include/ImporterFacets.php');
+require_once('../include/ImporterSnippets.php');
 
 
 // a chunk of code that shows the progress loading the file uploaded.
