@@ -66,6 +66,17 @@ At index time a script on the facet server calls a SOLR index directly and __upd
 
 For performance reasons the data that is added to each taxon document for faceted searching is just the facet IDs and IDs representing the provenance. A separate process makes SOLR documents containing labels for facet, facet values and data sources. This acts as a data dictionary so that we can render the facet information in a human readable way. Additionally label data is added to each taxon document as text so that those documents will be found in free text searches using words in facet labels.
 
+### Summary of Docs in SOLR
+
+The facet service creates a bunch of SOLR docs and these can get confusing but are actually pretty simple. The main documents are augmented name/taxon documents. All the others hold metadata that is merged in to in search results.
+
+- __name/taxon docs__ These are created by the Plant List data release and have no 'kind' field. They have a wfo_id_s which is the ten digit id of the name and their __id__ field is the full qualified 16 digit id of doc within the classification. The __classification_id_s__  field is very useful as it filters to a particular data release. e.g. 2024-12. These are the documents that are decorated (updated) by the facet service.
+- __wfo-facet__ These docs are identified by having the __kind_s__ field set to "wfo-facet". There is one per facet and they contain a __json_t__ field that holds a json description of all the values for that facet. Their __id__ is of the form wfo-f-* where * in the id of the facet in the database.
+- __wfo-facet-value-score__ metadata for the scoring of a facet. Identified by a __kind_s__ set to "wfo-facet-value-score". The id is wfo-fvs-wfo-0123456789-1-2  where 1 is the source_id and 2 is the value ids in the database. 
+- __wfo-snippet-source__ These docs are identified by having the __kind_s__ field set to "wfo-snippet-source". There is one per data source and they have the metadata for the data source in a __json_t__ field. Their __id__ is of the form wfo-ss-* where * in the id of the datasource in the database.
+ - __wfo-facet-source__ These docs are identified by having the __kind_s__ field set to "wfo-facet-source". There is one per data source and they have the metadata for the data source in a __json_t__ field. Their __id__ is of the form wfo-fs-* where * in the id of the datasource in the database.
+- __wfo-snippet__ metadata for an individual snippet. __kind_s__ field is set to "wfo-snippet". ID is wfo-snippet-* with the database id.
+
 
 ## Facet Ideas
 

@@ -11,7 +11,7 @@ class WfoFacets{
 
     /**
      * Does the full monty to index a taxon
-     * taking care of the hierarchy and negation
+     * taking care of the hierarchy 
      * 
      * @param since unix timestamp. Will only index 
      * documents older than this if supplied.
@@ -228,16 +228,63 @@ class WfoFacets{
             
         }
 
+
+        /*
+         TEXT SNIPPETS 
+            - these are only done on the target and its synonyms
+            - we use five multivalue fields
+            We could try and use the correct language version of the field but we'd need to be sure we had the correct languages set up in index and here.
+             this is an exercise left to version 2!
+        */
+        
+        // remove the existing snippet properties
+        $solr_doc->snippet_text_categories_ss = array(); // the category the snippet is
+        $solr_doc->snippet_text_languages_ss = array(); // the language the snippet is in
+        $solr_doc->snippet_text_name_ids_ss = array(); // the WFO ID of the name the snippet is attached to
+        $solr_doc->snippet_text_ids_ss = array(); // the id of this snippet - used to recover the metadata (including data source) for this snippet
+        $solr_doc->snippet_text_bodies_txt = array(); // actual blocks of text 
+  
+        // add the target taxon
+        WfoFacets::addSnippetsForWfoId($solr_doc, $wfo_id);
+
+        // add the snippets for each of the immediate synonyms
+        foreach ($taxon_tree['synonyms'] as $syn){
+            WfoFacets::addSnippetsForWfoId($solr_doc, $syn->wfo_id_s);
+        }
+
         // flag when we indexed it
         $solr_doc->facets_last_indexed_i = time();
 
-        // absolutely refuese to index something that isn't accepted
+        // absolutely refuse to index something that isn't accepted
         if($solr_doc->role_s != 'accepted'){
             echo "\nTrying to index non-accepted taxon.\n";
             exit;
         }
 
         return $solr_doc;
+
+    }
+
+    /**
+     * Will add all the associated snippet data to the solr doc for 
+     * a given wfo_id
+     */
+    private static function addSnippetsForWfoId($solr_doc, $wfo_id){
+        
+        global $mysqli;
+
+        $response = $mysqli->query("SELECT s.id, s.body, ss.category, ss.`language` 
+            FROM wfo_facets.snippets as s 
+            JOIN snippet_sources as ss on s.source_id = ss.source_id
+            WHERE s.wfo_id = '$wfo_id';");
+
+        while($row = $response->fetch_assoc()){
+            $solr_doc->snippet_text_name_ids_ss[] = $wfo_id; // the WFO ID of the name the snippet is attached to
+            $solr_doc->snippet_text_categories_ss[] = $row['category']; // the category the snippet is
+            $solr_doc->snippet_text_languages_ss[] = $row['language']; // the language the snippet is in
+            $solr_doc->snippet_text_ids_ss[] = $row['id']; // the id of this snippet - used to recover the metadata (including data source) for this snippet
+            $solr_doc->snippet_text_bodies_txt[] = $row['body']; // actual blocks of text 
+        }
 
 
     }
@@ -376,7 +423,7 @@ class WfoFacets{
 
     }
 
-    public static function indexSources(){
+    public static function indexFacetSources(){
 
         global $mysqli;
 
@@ -406,6 +453,42 @@ class WfoFacets{
 
     }
 
+    public static function indexSnippetSources(){
+
+        global $mysqli;
+
+        $solr_docs = array();
+
+        // we create solr docs as near as damn it 
+        // in the query
+        $response = $mysqli->query("SELECT 
+                concat('wfo-ss-', s.id) as id,
+                'wfo-snippet-source' as kind, 
+                s.`name` as 'name', 
+                s.`description` as 'description',
+                s.`link_uri` as 'link_uri',
+                ss.`category` as 'category',
+                ss.`language` as 'language'
+            FROM sources as s
+            JOIN snippet_sources AS ss on ss.source_id = s.id
+            ORDER BY s.`name`");
+        $sources = $response->fetch_All(MYSQLI_ASSOC);
+        $response->close();
+
+        foreach ($sources as $s) {
+            $solr_docs[] = (object)array(
+                'id'=> $s['id'],
+                'kind_s' => $s['kind'],
+                'json_t' => json_encode((object)$s)
+            );
+        }
+
+        $index = new SolrIndex();
+        $response = $index->saveDocs($solr_docs, true);
+     //   echo "<pre>";
+     //   print_r($solr_docs);
+
+    }
 
     public static function getFacetsFromDoc($solrDoc){
 
@@ -467,16 +550,22 @@ class WfoFacets{
 
                         $source_id  = $matches[2];
                         $source_doc = $index->getDoc('wfo-fs-'. $source_id);
-                        $source_doc = json_decode($source_doc->json_t);
 
-                        $new_provs[] = array(
-                            'wfo_id' => $wfo,
-                            'full_name_html' => $name_doc->full_name_string_html_s,
-                            'full_name_plain' => $name_doc->full_name_string_plain_s,
-                            'source_id' => $source_id,
-                            'source_name' => $source_doc->name,
-                            'kind' => $matches[3],
-                        );
+                        if($source_doc){
+                            $source_doc = json_decode($source_doc->json_t);
+
+                            $new_provs[] = array(
+                                'wfo_id' => $wfo,
+                                'full_name_html' => $name_doc->full_name_string_html_s,
+                                'full_name_plain' => $name_doc->full_name_string_plain_s,
+                                'source_id' => $source_id,
+                                'source_name' => $source_doc->name,
+                                'kind' => $matches[3],
+                            );
+                        }else{
+                            error_log("No source document found with id " . 'wfo-fs-'. $source_id);
+                        }
+
                 }
                 $out[$fd->id]['facet_values'][$fv_key]['provenance'] = $new_provs;
            
@@ -495,51 +584,133 @@ class WfoFacets{
         $index = new SolrIndex();
 
         // get the date of the last updated one in the index.
-        /*
         $query = array(
-            'query' => "*:*", // everything in this tree of names
-            "limit" => 1, // big limit - not run out of memory theoretically could fail on stupid numbers of synonyms
-            "order" => "modified desc",
-            "fields" => array('modified'),
-            'filter' => array( 
-                "classification_id_s:" . WFO_DEFAULT_VERSION,
-                "kind_s:wfo-score-metadata",
-            )    
+            'query' => "kind_s:wfo-facet-value-score",
+            "limit" => 1, 
+            "sort" => "modified_dt desc",
+            "fields" => array('modified_dt'), 
         );
         $docs = $index->getSolrDocs((object)$query);
 
         if(!$docs || count($docs) < 1){
             $modified_string = '1972-05-20T17:33:18Z';
         }else{
-            $modified_string = $docs[0]->modified;
+            $modified_string = $docs[0]->modified_dt;
         }
-        */
 
-        $modified_string = '1972-01-01T00:00:00Z';
         $modified_date = new DateTime($modified_string);
         $modified_sql = $modified_date->format('Y-m-d H:i:s');
 
+        echo "Indexing Scores\n";
        
-        $sql = "SELECT * FROM `wfo_scores` WHERE `modified` > '{$modified_sql}' AND meta_json is not null ORDER BY modified;";
+        $sql = "SELECT * FROM `wfo_scores` WHERE `modified` > '{$modified_sql}' AND meta_json is not null;"; // no need to order as we are not paging
         $response = $mysqli->query($sql, MYSQLI_USE_RESULT); // we allow for big result set
+
+        echo $response->num_rows . "\tscores to be indexed.\n";
 
         $page_counter = 0;
 
+        $solr_docs = array();
         while($row = $response->fetch_assoc()){
 
-            $data = array(
-                'id' => 'wfo',
-                'kind_s' => 'wfo-score-metadata',
-                'wfo_id_s' => $row['wfo_id']
+            $solr_doc = array(
+                'id' => "wfo-fvs-{$row['wfo_id']}-{$row['source_id']}-{$row['value_id']}",
+                'kind_s' => 'wfo-facet-value-score',
+                'wfo_id_s' => $row['wfo_id'],
+                'source_id_s' => $row['source_id'],
+                'value_id_s' => $row['value_id'],
+                'modified_dt' => str_replace(' ', 'T', $row['modified']) . 'Z', // convert the date format
+                'json_t' => $row['meta_json']
             );
 
+            $solr_docs[] = $solr_doc;
+
+            // save them in pages of 1,000
+            if(count($solr_docs) > 1000){
+                echo "Saving page ... ";
+                $index->saveDocs($solr_docs);
+                echo "saved.\n";
+                $solr_docs = array();
+            }
 
         }
 
+        // any left over
+        echo "Saving last page ... ";
+        $index->saveDocs($solr_docs);
+        echo " saved.\n";
 
 
+        // work through all the ones in the scores tables that have changes since that data 
+        // and add them in
+        
+        // need to include 
 
-        echo $sql;
+    }
+
+    public static function indexSnippets(){
+
+        global $mysqli;
+        $index = new SolrIndex();
+
+        // get the date of the last updated one in the index.
+        $query = array(
+            'query' => "kind_s:wfo-snippet",
+            "limit" => 1, 
+            "sort" => "modified_dt desc",
+            "fields" => array('modified_dt'), 
+        );
+        $docs = $index->getSolrDocs((object)$query);
+
+        if(!$docs || count($docs) < 1){
+            $modified_string = '1972-05-20T17:33:18Z';
+        }else{
+            $modified_string = $docs[0]->modified_dt;
+        }
+
+        $modified_date = new DateTime($modified_string);
+        $modified_sql = $modified_date->format('Y-m-d H:i:s');
+
+        echo "Indexing Snippets\n";
+       
+        $sql = "SELECT * FROM `snippets` WHERE `modified` > '{$modified_sql}' AND meta_json is not null;"; // no need to order as we are not paging
+        $response = $mysqli->query($sql, MYSQLI_USE_RESULT); // we allow for big result set
+
+        echo $response->num_rows . "\t snippets to be indexed.\n";
+
+        $page_counter = 0;
+
+        $solr_docs = array();
+        while($row = $response->fetch_assoc()){
+
+            $solr_doc = array(
+                'id' => "wfo-snippet-{$row['id']}",
+                'kind_s' => 'wfo-snippet',
+                'wfo_id_s' => $row['wfo_id'],
+                'source_id_s' => $row['source_id'],
+                'modified_dt' => str_replace(' ', 'T', $row['modified']) . 'Z', // convert the date format
+                'json_t' => $row['meta_json']
+            );
+
+            $solr_docs[] = $solr_doc;
+
+            // save them in pages of 1,000
+            if(count($solr_docs) > 1000){
+                echo "Saving page";
+                echo $page_counter++;
+                echo " ... ";
+                $index->saveDocs($solr_docs);
+                echo "saved.\n";
+                $solr_docs = array();
+            }
+
+        }
+
+        // any left over
+        echo "Saving last page ... ";
+        $index->saveDocs($solr_docs);
+        echo " saved.\n";
+
 
         // work through all the ones in the scores tables that have changes since that data 
         // and add them in

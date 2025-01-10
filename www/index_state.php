@@ -2,6 +2,7 @@
     require_once('header.php');
     require_once('../include/SolrIndex.php');
     require_once('../include/WfoFacets.php');
+    require_once('../include/language_codes.php');
 
     if(!@$_GET['wfo_id']){
 ?>
@@ -85,6 +86,34 @@ document.getElementById("state_search").onkeyup = function(e) {
     echo "</ul>"; // end last facet value list
     $response->close();
 
+
+    // now the text snippets
+    $sql = "SELECT 
+	s.id, s.body, ss.category, ss.`language`, so.`name` as source_name, so.id as source_id 
+FROM wfo_facets.snippets as s 
+JOIN snippet_sources as ss on s.source_id = ss.source_id
+JOIN sources as so on ss.source_id = so.id
+WHERE s.wfo_id = '{$index_name->wfo_id_s}'
+order by category, `language`;";
+
+$response = $mysqli->query($sql);
+
+$lang = null;
+$cat = null;
+while($row = $response->fetch_assoc()){
+
+    if($cat != $row['category'] || $lang != $row['language']){
+        $cat = $row['category'];
+        $lang = $row['language'];
+        echo "<h3>" . ucfirst($cat) . " - ". $language_codes[$lang] ."</h3>";
+    }
+
+    echo "<p><a href=\"snippet_source.php?source_id={$row['source_id']}\">{$row['source_name']}</a></p>";
+    echo "<p>{$row['body']}</p>";
+
+}
+
+
     echo '</div>'; // end left column
 ?>
 
@@ -128,6 +157,19 @@ document.getElementById("state_search").onkeyup = function(e) {
             }
             echo '</ul>';
             
+        } // each facet
+
+
+        if(isset($index_name->snippet_text_bodies_txt)){
+            // now the text snippets
+            for ($i=0; $i < count($index_name->snippet_text_bodies_txt); $i++) { 
+                    
+                echo "<h3>" . ucfirst($index_name->snippet_text_categories_ss[$i]) . " - ". $language_codes[$index_name->snippet_text_languages_ss[$i]] ."</h3>";
+                echo "<p>{$index_name->snippet_text_name_ids_ss[$i]}</p>";
+                echo "<p>{$index_name->snippet_text_ids_ss[$i]}</p>";
+                echo "<p>{$index_name->snippet_text_bodies_txt[$i]}</p>";
+                
+            }
         }
     
     ?>

@@ -5,12 +5,25 @@ require_once('header.php');
     // if god they can create new snippet sources
     if($user && $user['role'] == 'god'){
         echo '<div style="float: right;">';
+
+        echo '<a class="btn btn-sm btn-success" href="snippet_sources_index.php"
+            data-bs-toggle="tooltip"
+            data-bs-placement="bottom"
+            title="Update the index with the label info for the snippet sources." 
+            role="button">Index Snippet Source Labels</a>';
+
+        echo '&nbsp;<a class="btn btn-sm btn-success" href="snippets_index.php"
+            data-bs-toggle="tooltip"
+            data-bs-placement="bottom"
+            title="Update the index with the metadata for snippets changed since last index run." 
+            role="button">Index Snippets Metadata</a>';
+
         echo '&nbsp;<a 
             class="btn btn-sm btn-outline-secondary"
             href="snippet_source_create.php"
             role="button"
             data-bs-toggle="tooltip"
-            data-bs-placement="left"
+            data-bs-placement="bottom"
             title="Create a new source of text snippets of kind and language." 
             >Create snippet source</a>';
         echo '</div>';

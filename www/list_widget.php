@@ -6,6 +6,9 @@ require_once('../config.php');
 require_once('../include/Authorisation.php');
 require_once('../include/NameCache.php');
 
+// create a user object for use all over
+$user = @$_SESSION['user'] ? $_SESSION['user'] : null;
+
 $wfo = @$_REQUEST['wfo'];
 $source_id = (int)@$_REQUEST['source_id'];
 $value_id = (int)@$_REQUEST['value_id'];
@@ -27,7 +30,18 @@ if($can_edit && $toggle){
         $mysqli->query("DELETE FROM wfo_scores WHERE wfo_id = '$wfo' AND source_id = $source_id AND value_id = $value_id ");
         $present = false;
     }else{
-        $mysqli->query("INSERT INTO wfo_scores (wfo_id, source_id, value_id) VALUES ('$wfo', $source_id, $value_id)");
+
+        // we need some json data for each one
+        $meta = array(
+            'source' => 'Manually added on facet server',
+            'user' => $user['username'],
+            'user_role' => $user['role'],
+            'date' => date(DATE_ATOM)
+        );
+
+        $meta = json_encode((object)$meta);
+        $meta = $mysqli->real_escape_string($meta);
+        $mysqli->query("INSERT INTO wfo_scores (wfo_id, source_id, value_id, meta_json) VALUES ('$wfo', $source_id, $value_id, '$meta')");
         NameCache::cacheName($wfo);
         $present = true;
     }

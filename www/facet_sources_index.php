@@ -1,12 +1,14 @@
 <?php
 
+// called to index a single name
+// redirects after call
+
+// FIXME - MUST BE GOD TO DO THIS
 
 require_once('../config.php');
 require_once('../include/SolrIndex.php');
 require_once('../include/WfoFacets.php');
 
-set_time_limit(60*10); // ten minutes - if it takes longer then do it with the command line script
-
-WfoFacets::indexScores();
+WfoFacets::indexFacetSources();
 
 header('Location: sources.php');
