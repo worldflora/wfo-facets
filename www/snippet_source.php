@@ -6,20 +6,6 @@ require_once('header.php');
 
     $source_id = (int)@$_REQUEST['source_id'];
 
-    // if god they edit the snippet
-    if($user && $user['role'] == 'god'){
-        echo '<div style="float: right;">';
-        echo "&nbsp;<a 
-            class=\"btn btn-sm btn-outline-secondary\"
-            href=\"snippet_source_edit.php?source_id={$source_id}\"
-            role=\"button\"
-            data-bs-toggle=\"tooltip\"
-            data-bs-placement=\"left\"
-            title=\"Edit the metadata for this snippet source.\" 
-            >Edit</a>";
-        echo '</div>';
-    } // is god
-
     $response = $mysqli->query("SELECT *, s.modified as source_modified, ss.modified as language_kind_modified FROM snippet_sources as ss join sources as s on ss.source_id = s.id WHERE s.id = $source_id;");
     $rows = $response->fetch_all(MYSQLI_ASSOC);
 
@@ -28,6 +14,32 @@ require_once('header.php');
     }
 
     $source = $rows[0];
+
+    // if god they edit the snippet
+    if($user && $user['role'] == 'god'){
+        echo '<div style="float: right;">';
+      
+        // duplicate button - very useful!
+        // we just create a hidden form with the values in and post them to the create script
+        echo '<form style="display: inline;" method="POST" action="snippet_source_create.php">';
+        echo '<input type="hidden" id="name" name="name" value="Copy - '. $source['name'] .'" />';
+        echo '<input type="hidden" id="category" name="category" value="'.  $source['category'] .'" />';
+        echo '<input type="hidden" id="language" name="language" value="'.  $source['language'] .'" />';
+        echo '<input type="hidden" id="link_uri" name="link_uri" value="'.  $source['link_uri'] .'" />';
+        echo '<input type="hidden" id="description" name="description" value="'.  $source['description'] .'" />';
+
+        echo "&nbsp;<button 
+            class=\"btn btn-sm btn-outline-secondary\"
+            data-bs-toggle=\"tooltip\"
+            data-bs-placement=\"bottom\"
+            title=\"Make a duplicate source, perhaps for a different category.\" 
+            >Duplicate</button>";
+
+        echo '</form>';
+
+        echo '</div>';
+    } // is god
+
 
     echo '<p>&lt;- <a href="snippets.php">Snippet sources</a></p>';
     echo "<h1>{$source['name']}</h1>";

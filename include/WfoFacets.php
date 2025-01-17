@@ -483,8 +483,10 @@ class WfoFacets{
             );
         }
 
+        print_r($solr_docs);
         $index = new SolrIndex();
         $response = $index->saveDocs($solr_docs, true);
+        print_r($response);
      //   echo "<pre>";
      //   print_r($solr_docs);
 
