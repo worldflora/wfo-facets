@@ -9,6 +9,9 @@ require_once('../include/WfoFacets.php');
 class WfoFacets{
 
 
+    public static $facetsCache = array();
+    
+
     /**
      * Does the full monty to index a taxon
      * taking care of the hierarchy 
@@ -91,25 +94,12 @@ class WfoFacets{
 
         // get the scoring for each one and add it as required.
         $my_scores = array();
+        $my_sources = array(); // we need to facet on the sources the data came from
         foreach($path_wfos as $wfo){
 
-            $sql = "SELECT 
-                f.id as facet_id,
-                f.`name` as facet_name,
-                f.`heritable` as heritable,
-                fv.id as facet_value_id, 
-                fv.`name` as facet_value_name,
-                s.id as source_id,
-                s.`name` as source_name
-                FROM wfo_scores as ws
-                JOIN facet_values AS fv ON ws.value_id = fv.id
-                JOIN facets AS f ON fv.facet_id = f.id
-                JOIN sources AS s ON ws.source_id = s.id
-                WHERE ws.wfo_id = '{$wfo}';";
 
-            $response = $mysqli->query($sql);
-            $facets = $response->fetch_all(MYSQLI_ASSOC);
-              
+            $facets = WfoFacets::getFacetsForWfoId($wfo);
+
             foreach($facets as $facet){
 
                 // is this facet heritable?
@@ -121,6 +111,9 @@ class WfoFacets{
 
                 // the provenance tag 
                 $provenance_tag = "{$wfo}-s-{$facet['source_id']}-" . ($wfo == $wfo_id ? 'direct' : 'ancestor');
+
+                // keep a handle on the sources stuff is coming from
+                $my_sources[] = $facet['source_id'];
 
                 // Is it already recorded?
                 if(isset($my_scores[$facet_value_id])){
@@ -149,25 +142,12 @@ class WfoFacets{
                     $syn_ids[] = $dupe;
                 }
             }
-            $syn_ids = "'" . implode("', '", $syn_ids) . "'";
-
-
-            $sql = "SELECT 
-                f.id as facet_id,
-                f.`name` as facet_name,
-                fv.id as facet_value_id, 
-                fv.`name` as facet_value_name,
-                s.id as source_id,
-                s.`name` as source_name
-                FROM wfo_scores as ws
-                JOIN facet_values AS fv ON ws.value_id = fv.id
-                JOIN facets AS f ON fv.facet_id = f.id
-                JOIN sources AS s ON ws.source_id = s.id
-                WHERE ws.wfo_id in ($syn_ids);";
             
+            $facets = array();
 
-            $response = $mysqli->query($sql);
-            $facets = $response->fetch_all(MYSQLI_ASSOC);
+            foreach($syn_ids as $syn_id){
+                $facets = array_merge($facets, WfoFacets::getFacetsForWfoId($syn_id));
+            }
 
             foreach($facets as $facet){
 
@@ -225,10 +205,16 @@ class WfoFacets{
             // add it to the text field so we can 
             $solr_doc->{$facet_text_field_name} .= $score['facet_value_name'] . " : ";
             
-            
         }
 
-
+        // We've added the scores now we add a field with the sources
+        // so we can facet on sources of data if needed
+        $my_sources = array_unique($my_sources);
+        $solr_doc->{'wfo-facet-sources_ss'} = array();
+        foreach($my_sources as $source_id){
+            $solr_doc->{'wfo-facet-sources_ss'}[] = 'wfo-fs-' . $source_id; 
+        }
+        
         /*
          TEXT SNIPPETS 
             - these are only done on the target and its synonyms
@@ -241,7 +227,8 @@ class WfoFacets{
         $solr_doc->snippet_text_categories_ss = array(); // the category the snippet is
         $solr_doc->snippet_text_languages_ss = array(); // the language the snippet is in
         $solr_doc->snippet_text_name_ids_ss = array(); // the WFO ID of the name the snippet is attached to
-        $solr_doc->snippet_text_ids_ss = array(); // the id of this snippet - used to recover the metadata (including data source) for this snippet
+        $solr_doc->snippet_text_ids_ss = array(); // the id of this snippet - used to recover the metadata for this snippet
+        $solr_doc->snippet_text_sources_ss = array(); // the id of this snippet source so we can facet on it
         $solr_doc->snippet_text_bodies_txt = array(); // actual blocks of text 
   
         // add the target taxon
@@ -266,6 +253,54 @@ class WfoFacets{
     }
 
     /**
+     * This will fetch the facets for wfo ids
+     * It acts as a cache so we aren't continually
+     * retrieving the same data over and over all
+     * the way up the tree
+     */
+    private static function getFacetsForWfoId($wfo_id){
+
+        global $mysqli;
+
+        // if we have it cached just return that.
+        if(isset(WfoFacets::$facetsCache[$wfo_id])) return WfoFacets::$facetsCache[$wfo_id];
+
+        // not got it so get it.
+        $sql = "SELECT 
+        f.id as facet_id,
+        f.`name` as facet_name,
+        f.`heritable` as heritable,
+        fv.id as facet_value_id, 
+        fv.`name` as facet_value_name,
+        s.id as source_id,
+        s.`name` as source_name
+        FROM wfo_scores as ws
+        JOIN facet_values AS fv ON ws.value_id = fv.id
+        JOIN facets AS f ON fv.facet_id = f.id
+        JOIN sources AS s ON ws.source_id = s.id
+        WHERE ws.wfo_id = '{$wfo_id}';";
+
+        $response = $mysqli->query($sql);
+        $facets = $response->fetch_all(MYSQLI_ASSOC);
+        $response->close();
+        
+        WfoFacets::$facetsCache[$wfo_id] = $facets;
+
+        // we flush the cache cache at 10,000
+        if(count(WfoFacets::$facetsCache) > 10000){
+            echo "\nEmpting facets cache\n";
+            WfoFacets::$facetsCache = array();
+        } else{
+           // echo "\nCache". count(WfoFacets::$facetsCache) ."\n";
+        }
+
+        // finally return the goods
+        return $facets;
+
+    }
+
+
+    /**
      * Will add all the associated snippet data to the solr doc for 
      * a given wfo_id
      */
@@ -273,7 +308,7 @@ class WfoFacets{
         
         global $mysqli;
 
-        $response = $mysqli->query("SELECT s.id, s.body, ss.category, ss.`language` 
+        $response = $mysqli->query("SELECT s.id, s.source_id, s.body, ss.category, ss.`language` 
             FROM wfo_facets.snippets as s 
             JOIN snippet_sources as ss on s.source_id = ss.source_id
             WHERE s.wfo_id = '$wfo_id';");
@@ -282,7 +317,8 @@ class WfoFacets{
             $solr_doc->snippet_text_name_ids_ss[] = $wfo_id; // the WFO ID of the name the snippet is attached to
             $solr_doc->snippet_text_categories_ss[] = $row['category']; // the category the snippet is
             $solr_doc->snippet_text_languages_ss[] = $row['language']; // the language the snippet is in
-            $solr_doc->snippet_text_ids_ss[] = $row['id']; // the id of this snippet - used to recover the metadata (including data source) for this snippet
+            $solr_doc->snippet_text_ids_ss[] = 'wfo-snippet-' . $row['id']; // the id of this snippet - used to recover the metadata (including data source) for this snippet
+            $solr_doc->snippet_text_sources_ss[] = 'wfo-ss-' . $row['source_id']; // the id of this snippet - used to recover the metadata (including data source) for this snippet
             $solr_doc->snippet_text_bodies_txt[] = $row['body']; // actual blocks of text 
         }
 
@@ -385,7 +421,6 @@ class WfoFacets{
             FROM facets ORDER BY `name`");
         $facets = $response->fetch_All(MYSQLI_ASSOC);
         $response->close();
-
 
         foreach($facets as $facet){
 

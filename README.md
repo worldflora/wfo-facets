@@ -70,7 +70,18 @@ For performance reasons the data that is added to each taxon document for facete
 
 The facet service creates a bunch of SOLR docs and these can get confusing but are actually pretty simple. The main documents are augmented name/taxon documents. All the others hold metadata that is merged in to in search results.
 
-- __name/taxon docs__ These are created by the Plant List data release and have no 'kind' field. They have a wfo_id_s which is the ten digit id of the name and their __id__ field is the full qualified 16 digit id of doc within the classification. The __classification_id_s__  field is very useful as it filters to a particular data release. e.g. 2024-12. These are the documents that are decorated (updated) by the facet service.
+- __name/taxon docs__ These are created by the Plant List data release and have no 'kind' field. They have a wfo_id_s which is the ten digit id of the name and their __id__ field is the full qualified 16 digit id of doc within the classification. The __classification_id_s__  field is very useful as it filters to a particular data release. e.g. 2024-12. These are the documents that are decorated (updated) by the facet service. These documents can have the following fields:
+  - __wfo-f-*\_ss__ A faceting field. * is the db id of the facet. Contains the values of this facet for this taxon in the form wfo-fv-\*. This is the id of the facet document containing the metadata for the facet (see below). Adding "\_provenance_ss" to the end give the field containing the provenance in this document. 
+  - __wfo-fv-*\_provenance_ss__ A string that can be parsed to give the provenance of the facet value scoring. * is the db id of the facet value.
+  - __wfo-f-*\_t__ The text of the facet values present in this taxon. Enables freetext search by facet. Not used for rendering.
+  - __snippet_text_categories_ss__ The catagory (subject) of the snippet. e.g. morphology or distribution.
+  - __snippet_text_languages_ss__ The lanuage the snippet is in.
+  - __snippet_text_name_ids_ss__ The WFO IDs that the snippets were attached to (maybe synonym of the taxon remember)
+  - __snippet_text_ids_ss__ The ids of the snippets so that we can recover the snippet that is stored as a separate document in the 
+  - __snippet_text_bodies_txt__ The content of the snippets. These are not rendered but here so we can search by text.
+  - __snippet_text_sources_ss__ The id of the source so we can facet on it.
+  - __facets_last_indexed_i__ Time stamp of when the facets were last indexed so we can selectively reindex if needed.
+
 - __wfo-facet__ These docs are identified by having the __kind_s__ field set to "wfo-facet". There is one per facet and they contain a __json_t__ field that holds a json description of all the values for that facet. Their __id__ is of the form wfo-f-* where * in the id of the facet in the database.
 - __wfo-facet-value-score__ metadata for the scoring of a facet. Identified by a __kind_s__ set to "wfo-facet-value-score". The id is wfo-fvs-wfo-0123456789-1-2  where 1 is the source_id and 2 is the value ids in the database. 
 - __wfo-snippet-source__ These docs are identified by having the __kind_s__ field set to "wfo-snippet-source". There is one per data source and they have the metadata for the data source in a __json_t__ field. Their __id__ is of the form wfo-ss-* where * in the id of the datasource in the database.

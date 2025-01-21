@@ -30,22 +30,26 @@ while(true){
     
     $page_start = new DateTime(); 
 
+    echo "Page starts: \t" . number_format($offset, 0) . "\n";
+
     // get the next page
     $solr_query['offset'] = $offset;
     $solr_response = $index->getSolrResponse($solr_query);
 
-    echo "Page starts $offset\n";
 
     $counter = 0;
     foreach ($solr_response->response->docs as $doc) {
         $counter++;
-       // echo "\t$counter\t{$doc->wfo_id_s}\t{$doc->full_name_string_plain_s}\t";
-        $new_doc = WfoFacets::getTaxonIndexDoc($doc->wfo_id_s);
+        $call_timer = microtime(true);
+        echo "\t$counter\t{$doc->wfo_id_s}\t{$doc->full_name_string_plain_s}\t";
+        $new_doc = WfoFacets::getTaxonIndexDoc($doc->wfo_id_s);        
         if($new_doc) $updated_docs[] = $new_doc;
-        // echo "done\n";
+        echo number_format(microtime(true) - $call_timer, 3) . " msecs\t";
+        echo number_format(count(WfoFacets::$facetsCache)) . " cached\tdone\n";
+        
     }
 
-    echo "Page ends\n\n";
+    echo "Page ends\n";
 
     // save this page
     $index->saveDocs($updated_docs, true);
