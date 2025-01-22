@@ -9,6 +9,8 @@ require_once('../config.php');
 require_once('../include/SolrIndex.php');
 require_once('../include/WfoFacets.php');
 
-WfoFacets::indexFacetSources();
+echo "Coming soon!";
+
+WfoFacets::indexSnippetSources();
 
 header('Location: snippets.php');
