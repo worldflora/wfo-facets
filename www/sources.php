@@ -13,7 +13,7 @@
 <h1>Sources</h1>
 
 <p class="lead">
-    Here is a list of all the sources we have...
+    Here is a list of all the facet sources we have. Snippet sources are stored under <a href="snippets.php">snippets</a>.
 </p>
 
 <ul class="list-group">

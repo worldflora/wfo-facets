@@ -20,7 +20,17 @@
 
     echo '<div style="float: right;">';
     if($user && $user['role'] == 'god'){
+   
+ 
+        echo '<a class="btn btn-sm btn-success" href="facet_source_taxa_index.php?source_id='. $source_id .'"
+        data-bs-toggle="tooltip"
+        data-bs-placement="bottom"
+        title="This will index all the taxa that are mentioned in this snippet source." 
+        role="button">Index taxa</a>';  
+
         echo '&nbsp;<a class="btn btn-sm btn-outline-danger" href="#" onclick="alert(\'Deleting is serious business and is currently done at the database level only.\')" role="button">Delete source</a>';
+   
+   
     }
     echo '</div>';
 
