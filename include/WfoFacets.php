@@ -711,6 +711,7 @@ class WfoFacets{
         echo "Indexing Snippets modified since $modified_sql\n";
        
         $sql = "SELECT * FROM `snippets` WHERE `modified` >= '{$modified_sql}' AND meta_json is not null;"; // no need to order as we are not paging
+        echo $sql;
         $response = $mysqli->query($sql, MYSQLI_USE_RESULT); // we allow for big result set
 
         echo $response->num_rows . "\t snippets to be indexed.\n";
