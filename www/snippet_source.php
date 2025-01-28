@@ -161,7 +161,7 @@ require_once('header.php');
             <td><?php echo $source['harvest_last'] ?></td>
         </tr>
         <?php
-            $response = $mysqli->query("SELECT count(*) as n,  min(length(body)) as min, avg(length(body)) as average, max(length(body)) as max FROM wfo_facets.snippets where source_id = {$source['source_id']};");
+            $response = $mysqli->query("SELECT count(*) as n, count(distinct(`wfo_id`)) as 'distinct',  min(length(body)) as min, avg(length(body)) as average, max(length(body)) as max FROM wfo_facets.snippets where source_id = {$source['source_id']};");
             $rows = $response->fetch_all(MYSQLI_ASSOC);
             $response->close();
             $stats = $rows[0];
@@ -170,6 +170,10 @@ require_once('header.php');
         <tr>
             <th style="text-align: right;" scope="row">Number of snippets</th>
             <td><?php echo number_format($stats['n'], 0) ?></td>
+        </tr>
+        <tr>
+            <th style="text-align: right;" scope="row">Number of WFO IDs</th>
+            <td><?php echo number_format($stats['distinct'], 0) ?></td>
         </tr>
         <tr>
             <th style="text-align: right;" scope="row">Minimum length</th>

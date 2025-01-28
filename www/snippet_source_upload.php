@@ -25,7 +25,6 @@ if($_POST && isset($_FILES["input_file"]) && Authorisation::canEditSourceData($s
     $importer = false;
 }
 
-
 ?>
 <p class="lead">
     Upload snippets

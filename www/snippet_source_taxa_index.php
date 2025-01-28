@@ -94,7 +94,7 @@ if(@$_GET['clean_up'] == 'remaining_taxa'){
 
 
         // actually page through the snippets to be indexed
-        $response = $mysqli->query("SELECT wfo_id FROM `snippets` WHERE source_id = $source_id ORDER BY wfo_id LIMIT 100 OFFSET $offset");
+        $response = $mysqli->query("SELECT distinct(wfo_id) as 'wfo_id' FROM `snippets` WHERE source_id = $source_id ORDER BY wfo_id LIMIT 100 OFFSET $offset");
 
         if($response->num_rows == 0){
             echo "<p>Finnished working through names.</p>";
@@ -107,6 +107,8 @@ if(@$_GET['clean_up'] == 'remaining_taxa'){
             while($row = $response->fetch_assoc()){
             
                 $solr_docs[] =  WfoFacets::getTaxonIndexDoc($row['wfo_id']); 
+
+               // echo "{$row['wfo_id']}<br/>";
                 
                 // remove this wfo_id from the previously indexed
                 if (($key = array_search($row['wfo_id'], $previous_indexed_taxa)) !== false) unset($previous_indexed_taxa[$key]);

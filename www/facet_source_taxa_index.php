@@ -115,7 +115,7 @@ if(@$_GET['clean_up'] == 'remaining_taxa'){
     }
 
     // get a page full from the db
-    $response = $mysqli->query("SELECT ws.wfo_id from sources as s
+    $response = $mysqli->query("SELECT distinct(ws.wfo_id) as 'wfo_id' from sources as s
     JOIN wfo_scores as ws on ws.source_id = s.id
     where s.id = $source_id
     order by ws.wfo_id
