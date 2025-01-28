@@ -32,7 +32,7 @@ class ImporterSnippets{
         
     public function __sleep(){
         fclose($this->file);
-        return array('filePath', 'sourceId', 'offset', 'created');
+        return array('filePath', 'sourceId', 'offset', 'created', 'header');
     }
     
     public function __wakeup(){
@@ -50,7 +50,7 @@ class ImporterSnippets{
     public function import($page_size){
 
         global $mysqli;
-  
+
         for ($i=0; $i < $page_size; $i++) { 
 
             $row = fgetcsv($this->file);
@@ -62,8 +62,8 @@ class ImporterSnippets{
                     // we have a wfo-id in the first column so we know this isn't a header row
                     // make one up
                     $this->header = array();
-                    for($i = 0; $i < count($row); $i++){
-                        $this->header[] = 'col_' . $i;
+                    for($j = 0; $j < count($row); $j++){
+                        $this->header[] = 'col_' . $j;
                     }
                 }else{
                     // the first row is the header
@@ -91,14 +91,15 @@ class ImporterSnippets{
                 $safe_body =  $mysqli->real_escape_string($row[1]);
 
                 $meta = array();
-                for($i = 0; $i < count($this->header); $i++){
-                    $meta[$this->header[$i]] = $row[$i];
+                for($j = 0; $j < count($this->header); $j++){
+                    $meta[$this->header[$j]] = $row[$j];
                 }
 
                 $meta_json = json_encode((object)$meta);
                 $meta_json_safe = $mysqli->real_escape_string($meta_json);
                 $mysqli->query("INSERT INTO snippets (`wfo_id`, `source_id`, `body`, `meta_json`) VALUES ('$wfo_id', {$this->sourceId}, '{$safe_body}', '{$meta_json_safe}');");
                 if($mysqli->error) error_log($mysqli->error);
+
             }
 
         }
