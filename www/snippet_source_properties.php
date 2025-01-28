@@ -15,13 +15,14 @@ if(@$_POST && @$_POST['properties_button'] &&  Authorisation::canEditSourceData(
 
     echo "<script>document.location = 'snippet_source.php?source_id={$source_id}&tab=properties-tab'</script>";
 
-}else{
-    $name = $source['name'];
-    $description = $source['description'];
-    $link_uri = $source['link_uri'];
-    $category = $source['category'];
-    $language = $source['language'];
 }
+
+$name = $source['name'];
+$description = $source['description'];
+$link_uri = $source['link_uri'];
+$category = $source['category'];
+$language = $source['language'];
+
 
 ?>
 <p class="lead">

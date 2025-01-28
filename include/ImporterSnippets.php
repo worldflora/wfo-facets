@@ -94,6 +94,7 @@ class ImporterSnippets{
                 for($i = 0; $i < count($this->header); $i++){
                     $meta[$this->header[$i]] = $row[$i];
                 }
+
                 $meta_json = json_encode((object)$meta);
                 $meta_json_safe = $mysqli->real_escape_string($meta_json);
                 $mysqli->query("INSERT INTO snippets (`wfo_id`, `source_id`, `body`, `meta_json`) VALUES ('$wfo_id', {$this->sourceId}, '{$safe_body}', '{$meta_json_safe}');");
