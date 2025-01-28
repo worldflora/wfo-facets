@@ -200,8 +200,7 @@ function callProgressBar(div, file_name) {
     fetch(file_name)
         .then((response) => response.json())
         .then((json) => {
-            div.innerHTML =
-                `<div class="alert alert-${json.level}" role="alert">${json.message}</div>`;
+            div.innerHTML = `<div class="alert alert-${json.level}" role="alert">${json.message}</div>`;
             if (!json.complete) callProgressBar(div, file_name);
         });
     listChanged = true;

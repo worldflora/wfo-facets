@@ -17,7 +17,12 @@ if(!$offset) $offset =0;
 
 $previous_indexed_taxa = array(); // keep tabs on ones already in the index
 
-echo "<h2>Indexing snippet source taxa</h2>";
+
+$response = $mysqli->query("SELECT * FROM sources where id = $source_id");
+$details = $response->fetch_all(MYSQLI_ASSOC)[0];
+$response->close();
+
+echo "<h2>Indexing taxa from snippet source '{$details['name']}' </h2>";
 
 
 if(@$_GET['clean_up'] == 'remaining_taxa'){
