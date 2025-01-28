@@ -94,7 +94,7 @@ if(@$_GET['clean_up'] == 'remaining_taxa'){
 
 
         // actually page through the snippets to be indexed
-        $response = $mysqli->query("SELECT distinct(wfo_id) as 'wfo_id' FROM `snippets` WHERE source_id = $source_id ORDER BY wfo_id LIMIT 100 OFFSET $offset");
+        $response = $mysqli->query("SELECT distinct(wfo_id) as 'wfo_id' FROM `snippets` WHERE source_id = $source_id ORDER BY wfo_id LIMIT 10 OFFSET $offset");
 
         if($response->num_rows == 0){
             echo "<p>Finnished working through names.</p>";
@@ -106,8 +106,16 @@ if(@$_GET['clean_up'] == 'remaining_taxa'){
             $solr_docs = array();
             while($row = $response->fetch_assoc()){
             
-                $solr_docs[] =  WfoFacets::getTaxonIndexDoc($row['wfo_id']); 
-
+                $doc =  WfoFacets::getTaxonIndexDoc($row['wfo_id']); 
+/*
+                if($row['wfo_id'] == 'wfo-0000088131'){
+                    echo '<pre>';
+                    print_r($doc);
+                    echo '</pre>';
+                    exit;
+                }
+*/
+               $solr_docs[] = $doc;
                // echo "{$row['wfo_id']}<br/>";
                 
                 // remove this wfo_id from the previously indexed
@@ -117,16 +125,19 @@ if(@$_GET['clean_up'] == 'remaining_taxa'){
 
             // save those docs to the index and commit them
             $index = new SolrIndex();
-            $index->saveDocs($solr_docs, true);
+            $response = $index->saveDocs($solr_docs, true);
+            if(isset($response->error_message)) {
+                print_r($response);
+                exit;
+            }          
 
             // put the chopped down list in the session for the next page
             $_SESSION['snippet_source_taxa_index'] = $previous_indexed_taxa;
-
             
             // tell them what is going on and redirect.
             echo "<p>Indexing in progress. ". number_format($offset, 0)  ." completed.</p>";
 
-            $offset += 100;
+            $offset += 10;
 
             $uri = "snippet_source_taxa_index.php?source_id=" . $source_id . "&offset=$offset";
             echo "<script>window.location = \"$uri\"</script>";

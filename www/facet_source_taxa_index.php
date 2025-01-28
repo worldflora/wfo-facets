@@ -119,7 +119,7 @@ if(@$_GET['clean_up'] == 'remaining_taxa'){
     JOIN wfo_scores as ws on ws.source_id = s.id
     where s.id = $source_id
     order by ws.wfo_id
-    LIMIT 1000 OFFSET $offset;");
+    LIMIT 100 OFFSET $offset;");
 
     //echo $response->num_rows;
 
@@ -156,7 +156,7 @@ if(@$_GET['clean_up'] == 'remaining_taxa'){
         echo "<p>Indexing in progress. ". number_format($offset, 0)  ." <strong>names</strong> completed.</p>";
         echo "<p>Remaining of previously index <strong>taxa</strong>: ". number_format(count($previous_indexed_taxa), 0)  .".</p>";
 
-        $offset += 1000;
+        $offset += 100;
 
         $uri = "facet_source_taxa_index.php?source_id=" . $source_id . "&offset=$offset";
         echo "<script>window.location = \"$uri\"</script>";

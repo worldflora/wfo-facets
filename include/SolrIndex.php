@@ -34,6 +34,9 @@ class SolrIndex{
 
         $solr_query_uri = SOLR_QUERY_URI . '/update?commit='. ($commit ? 'true': 'false');
         $response = $this->curlPostJson($solr_query_uri, json_encode($solr_docs));
+
+        
+
         return $response;
 
     }
@@ -110,6 +113,8 @@ class SolrIndex{
         $ch = $this->getCurlHandle($uri);
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json')); 
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 60);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 60);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $json);
         $response = $this->runCurlRequest($ch);
         return $response;
