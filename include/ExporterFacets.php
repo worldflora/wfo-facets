@@ -154,7 +154,7 @@ class ExporterFacets{
         $index = new SolrIndex();
         $path = array();
 
-        $response = $mysqli->query("SELECT wfo_id FROM wfo_scores where source_id = $this->sourceId ORDER BY wfo_id LIMIT 100 OFFSET $this->offset;");
+        $response = $mysqli->query("SELECT wfo_id FROM wfo_scores where source_id = $this->sourceId ORDER BY wfo_id LIMIT 500 OFFSET $this->offset;");
         while($row = $response->fetch_assoc()){
 
             // we need to build a tree of docs even if this is a synonym - unlike what we do during indexing.
@@ -260,7 +260,7 @@ class ExporterFacets{
            $this->phase = 'html'; 
            $this->offset = 0;
         }else{
-            $this->offset += 100;
+            $this->offset += 500;
         }
         
         error_log('Page: ' . $this->offset);
@@ -296,7 +296,7 @@ class ExporterFacets{
         // sort by the name path and then role. 
         // synonyms have the same name path as their accepted names so they 
         // will come after the accepted name 
-        $response = $this->db->query("SELECT * FROM `records` where role in ('accepted', 'synonym') order by `path`, `role`, `name` limit 100 offset {$this->offset} ");
+        $response = $this->db->query("SELECT * FROM `records` where role in ('accepted', 'synonym') order by `path`, `role`, `name` limit 500 offset {$this->offset} ");
         $row_count = 0;
         $reached_common_ancestor = false;
         while ($row = $response->fetchArray()) {
@@ -365,7 +365,7 @@ class ExporterFacets{
 
 
         }else{
-            $this->offset += 100;
+            $this->offset += 500;
         }
         
     }
