@@ -351,7 +351,6 @@ class WfoFacets{
 
         }
 
-
         // still nothing found so just get out of here
         if(!$tree['target'])return $tree;
 
@@ -364,7 +363,6 @@ class WfoFacets{
             'query' => "name_ancestor_path:{$tree['target']->name_ancestor_path}", // everything in this tree of names
             "limit" => 10000, // big limit - not run out of memory theoretically could fail on stupid numbers of synonyms
             'filter' => array("classification_id_s:{$tree['target']->classification_id_s}"// filtered by this classification
-            
         ) );
         $docs = $index->getSolrDocs((object)$query);
 

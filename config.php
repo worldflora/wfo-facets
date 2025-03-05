@@ -28,6 +28,10 @@ define('PLANT_LIST_GRAPHQL_URI', $plant_list_graphql_uri);
 // will normally be set to the most recent.
 define('WFO_DEFAULT_VERSION','9999-04');
 
+// where the SQLite files are stored for export of lists end it in a slash
+define('WFO_EXPORTS_DIRECTORY','../data/exports/');
+
+
 // create and initialise the database connection
 $mysqli = new mysqli($db_host, $db_user, $db_password, $db_database);  
 
