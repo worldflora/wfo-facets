@@ -155,6 +155,8 @@ class ExporterFacets{
         $path = array();
 
         $response = $mysqli->query("SELECT wfo_id FROM wfo_scores where source_id = $this->sourceId ORDER BY wfo_id LIMIT 100 OFFSET $this->offset;");
+
+        $this->db->exec('BEGIN');
         while($row = $response->fetch_assoc()){
 
             // we need to build a tree of docs even if this is a synonym - unlike what we do during indexing.
@@ -253,7 +255,8 @@ class ExporterFacets{
             } 
 
 
-        }
+        }// mysql row
+        $this->db->exec('COMMIT');
 
         if($response->num_rows == 0){
            //$this->finished = true;
