@@ -34,7 +34,7 @@ download a file in the format you require.
         foreach($files as $file){
             echo "<li>";
             echo "<a href=\"$file\">".  basename($file) . "</a>";
-            echo "&nbsp;-&nbsp;Exported: " . date ("F d Y @ H:i:s.", filemtime($file));
+            echo "&nbsp;-&nbsp;Generated: " . date ("F d Y @ H:i:s.", filemtime($file));
             echo "</li>";
         }
         echo "</ul>";

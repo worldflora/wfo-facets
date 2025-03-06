@@ -116,8 +116,23 @@ class ExporterFacets{
         $percent = round(($this->offset/$this->total)*100);
         if($percent > 100) $percent = 100;
 
+        switch ($this->phase) {
+            case 'sqlite':
+                $title = "Creating local data cache.";
+                break;
+            case 'html':
+                $title = "Creating HTML file.";
+                break;
+            case 'csv':
+                $title = "Creating csv file.";
+                break;    
+            default:
+                $title = "Working ...";
+                break;
+        }
+
         $out = '<div style="width: 100%;">';
-        $out .= "<span>&nbsp;{$this->phase}</span>";
+        $out .= "<span>&nbsp;{$title}</span>";
         $out .= '</div>';
 
         $out .= '<div style="width: 100%; border: solid black 1px; background-color: gray;">';
@@ -145,6 +160,7 @@ class ExporterFacets{
         if($this->phase == 'html') return $this->pageHtml();
         if($this->phase == 'csv') return $this->pageCsv();
         $this->finished = true;
+        $this->deleteSqliteDb();
 
     }
 
@@ -154,7 +170,7 @@ class ExporterFacets{
         $index = new SolrIndex();
         $path = array();
 
-        $response = $mysqli->query("SELECT wfo_id FROM wfo_scores where source_id = $this->sourceId ORDER BY wfo_id LIMIT 100 OFFSET $this->offset;");
+        $response = $mysqli->query("SELECT wfo_id FROM wfo_scores where source_id = $this->sourceId ORDER BY wfo_id LIMIT 200 OFFSET $this->offset;");
 
         $this->db->exec('BEGIN');
         while($row = $response->fetch_assoc()){
@@ -263,7 +279,7 @@ class ExporterFacets{
            $this->phase = 'html'; 
            $this->offset = 0;
         }else{
-            $this->offset += 100;
+            $this->offset += 200;
         }
         
         error_log('Page: ' . $this->offset);
@@ -299,7 +315,7 @@ class ExporterFacets{
         // sort by the name path and then role. 
         // synonyms have the same name path as their accepted names so they 
         // will come after the accepted name 
-        $response = $this->db->query("SELECT * FROM `records` where role in ('accepted', 'synonym') order by `path`, `role`, `name` limit 100 offset {$this->offset} ");
+        $response = $this->db->query("SELECT * FROM `records` where role in ('accepted', 'synonym') order by `path`, `role`, `name` limit 1000 offset {$this->offset} ");
         $row_count = 0;
         $reached_common_ancestor = false;
         while ($row = $response->fetchArray()) {
@@ -362,13 +378,13 @@ class ExporterFacets{
 
             @unlink($this->htmlFilePath);
             
-            $this->finished = true;
+            $this->finished = false;
             $this->offset = 0;
-            $this->phase = 'done';
+            $this->phase = 'csv';
 
 
         }else{
-            $this->offset += 100;
+            $this->offset += 1000;
         }
         
     }
@@ -376,6 +392,7 @@ class ExporterFacets{
     private function writeUnplaced($out){
 
         fwrite($out, "<h2>Unplaced Names</h2>");
+        fwrite($out, "<p>Names that have not been placed in the classification by a WFO taxonomist yet.</p>");
         $response = $this->db->query("SELECT * FROM `records` where role = 'unplaced' order by `name`;");
         fwrite($out, '<ul>');
         $row_count = 0;
@@ -391,6 +408,8 @@ class ExporterFacets{
     private function writeDeprecated($out){
 
         fwrite($out, "<h2>Deprecated Names</h2>");
+        fwrite($out, "<p>Names that can't be placed because they were created in error or represent an unused rank.</p>");
+        
         $response = $this->db->query("SELECT * FROM `records` where role = 'deprecated' order by `name`;");
         fwrite($out, '<ul>');
         $row_count = 0;
@@ -428,6 +447,100 @@ class ExporterFacets{
 
             fwrite($out, '</li>');
 
+    }
+
+    public function pageCsv(){
+
+        // does the output file exist?
+        if(!file_exists($this->csvFilePath)){
+
+            // open it and insert the header stuff
+            $out = fopen($this->csvFilePath, 'w');
+
+            // put a header row in
+            fputcsv($out, array(
+                'wfo_id',
+                'scientific_name',
+                'taxonomic_status',
+                'named_in_list',
+                'rank',
+                'parent_id',
+                'accepted_id',
+                'name_path',
+                'name_no_authors',
+                'authors',
+                'micro_citation',
+                'nomenclatural_status'
+            ));
+
+            // check we are starting at the beginning of the db
+            $this->offset = 0;
+            $this->total = $this->db->querySingle("SELECT count(*) from records;");
+
+        }else{
+            // just open it for append
+            $out = fopen($this->csvFilePath, 'a');
+        }
+
+        $response = $this->db->query("SELECT * FROM `records` order by `path` NULLS LAST, `role`, `name` LIMIT 1000 offset {$this->offset} ");
+        $row_count = 0;
+        while ($row = $response->fetchArray()) {
+
+            $row_count++;
+
+            $csv_row = array();
+            $csv_row[] = $row['wfo_id'];
+            $csv_row[] = $row['name'];
+            $csv_row[] = $row['role'];
+            $csv_row[] = $row['featured'];
+            $csv_row[] = $row['rank'];
+
+            if($row['parent_id']){
+                if($row['role'] == 'accepted'){
+                    $csv_row[] = $row['parent_id'];
+                    $csv_row[] = null;
+                }else{
+                    $csv_row[] = null;
+                    $csv_row[] = $row['parent_id'];
+                }
+            }else{
+                $csv_row[] = null;
+                $csv_row[] = null;
+            }
+
+            $csv_row[] = $row['path'];
+
+            // now some fluff from the rest of the record
+            $json = json_decode($row['body']);
+
+            $csv_row[] = @$json->full_name_string_no_authors_plain_s;
+            $csv_row[] = @$json->authors_string_s;
+            $csv_row[] = @$json->citation_micro_t;
+            $csv_row[] = @$json->nomenclatural_status_s;
+
+            fputcsv($out,$csv_row);
+
+        }
+
+        if($row_count == 0){
+
+            // close of the last lists
+            fclose($out);
+            
+            $zip = new ZipArchive;
+            $zip->open($this->csvFilePath . '.zip', ZIPARCHIVE::CREATE);
+            $zip->addFile($this->csvFilePath, basename($this->htmlFilePath));
+            $zip->close();
+
+            @unlink($this->csvFilePath);
+
+            $this->finished = true;
+            $this->offset = 0;
+            $this->phase = 'done';
+
+        }else{
+            $this->offset += 1000;
+        }
     }
 
     /**
