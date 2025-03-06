@@ -170,7 +170,7 @@ class ExporterFacets{
         $index = new SolrIndex();
         $path = array();
 
-        $response = $mysqli->query("SELECT wfo_id FROM wfo_scores where source_id = $this->sourceId ORDER BY wfo_id LIMIT 200 OFFSET $this->offset;");
+        $response = $mysqli->query("SELECT wfo_id FROM wfo_scores where source_id = $this->sourceId ORDER BY wfo_id LIMIT 50 OFFSET $this->offset;");
 
         $this->db->exec('BEGIN');
         while($row = $response->fetch_assoc()){
@@ -279,7 +279,7 @@ class ExporterFacets{
            $this->phase = 'html'; 
            $this->offset = 0;
         }else{
-            $this->offset += 200;
+            $this->offset += 50;
         }
         
         error_log('Page: ' . $this->offset);
