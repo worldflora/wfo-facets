@@ -370,6 +370,8 @@ class ExporterFacets{
             $this->writeDeprecated($out);
             $this->writeHtmlFooter($out);
             fclose($out);
+
+            @unlink($this->htmlFilePath . '.zip');
             
             $zip = new ZipArchive;
             $zip->open($this->htmlFilePath . '.zip', ZIPARCHIVE::CREATE);
@@ -527,6 +529,8 @@ class ExporterFacets{
             // close of the last lists
             fclose($out);
             
+            @unlink($this->csvFilePath . '.zip');
+
             $zip = new ZipArchive;
             $zip->open($this->csvFilePath . '.zip', ZIPARCHIVE::CREATE);
             $zip->addFile($this->csvFilePath, basename($this->csvFilePath));
