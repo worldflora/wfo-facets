@@ -529,7 +529,7 @@ class ExporterFacets{
             
             $zip = new ZipArchive;
             $zip->open($this->csvFilePath . '.zip', ZIPARCHIVE::CREATE);
-            $zip->addFile($this->csvFilePath, basename($this->htmlFilePath));
+            $zip->addFile($this->csvFilePath, basename($this->csvFilePath));
             $zip->close();
 
             @unlink($this->csvFilePath);

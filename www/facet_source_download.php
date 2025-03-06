@@ -71,9 +71,9 @@ download a file in the format you require.
 
 <script>
 
-    function generateFilesPage(offset){
+    function generateFilesPage(){
         const modalContent = document.getElementById('generateModalContent');
-        fetch("facet_source_generate_files.php?offset=" + offset + "&source_id=" + <?php echo $source_id ?>)
+        fetch("facet_source_generate_files.php?source_id=" + <?php echo $source_id ?>)
         .then(response => response.json())
         .then(json => {
             modalContent.innerHTML = json.message;
@@ -81,7 +81,7 @@ download a file in the format you require.
                 window.location = "facet_source.php?status=finished&tab=download-tab&source_id=" + <?php echo $source_id ?>;
             }else{ 
                 setTimeout( () => { 
-                    generateFilesPage( parseInt(json.offset) + 1);
+                    generateFilesPage();
                 }, 10);
             }
             return json;
