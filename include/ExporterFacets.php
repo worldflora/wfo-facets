@@ -368,7 +368,7 @@ class ExporterFacets{
                 fwrite($out, '</ul></li>');
             }
 
-            $this->writeTaxonName($out, $row);
+            $this->writeTaxonName($out, $row, !$this->inSynonyms);
 
             // hold the taxon path so we know if we need to do synonyms or not
             $this->lastTaxonPath = $row['path'];
