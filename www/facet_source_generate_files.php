@@ -11,7 +11,8 @@ if(@$_SESSION['exporter']){
     $exporter = unserialize($_SESSION['exporter']);
 }else{
     // we are being called for the first time
-    $exporter = new ExporterFacets($_GET['source_id']);
+    $include_syns = @$_GET['include_synonyms'] && $_GET['include_synonyms'] == 'true'; 
+    $exporter = new ExporterFacets($_GET['source_id'], $include_syns);
 }
 
 // do a page

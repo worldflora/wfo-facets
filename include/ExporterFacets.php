@@ -26,17 +26,19 @@ class ExporterFacets{
     public ?string $htmlFilePath = null; 
     public ?string $csvFilePath = null; 
     public ?string $title = null;
+    public bool $includeSynonyms = false;
 
 
     private $db = null;
 
 
-    public function __construct($source_id){
+    public function __construct($source_id, $include_syns = false){
 
         global $mysqli;
 
         $this->created = time();
         $this->sourceId = $source_id;
+        $this->includeSynonyms = $include_syns;
 
         // set up the locations to put the files
         @mkdir(WFO_EXPORTS_DIRECTORY, 0777, true);
@@ -226,7 +228,20 @@ class ExporterFacets{
                     }
 
                 }
-    
+
+                if($this->includeSynonyms){
+                    // we add synonyms of the target (or its parent if it is a synonym)
+                    if(isset($target->accepted_id_s)){
+                        $syns_of = $all[$target->accepted_id_s];
+                    }else{
+                        $syns_of = $target;
+                    }
+                    foreach($all as $syn){
+                        if(isset($syn->accepted_id_s) && $syn->accepted_id_s == $syns_of->id ) $path[] = $syn;
+                    }
+                }
+
+
             }
  
             $statement = $this->db->prepare('INSERT OR IGNORE INTO "records" (
@@ -565,7 +580,7 @@ class ExporterFacets{
         }
 
         $number_kids = $this->db->querySingle("SELECT count(*) FROM `records` WHERE `parent_id` = '$wfo_id';");
-        if($number_kids > 1){
+        if($number_kids < 2){
             return $wfo_id;
         }else{
             $child_wfo = $this->db->querySingle("SELECT wfo_id FROM `records` WHERE `parent_id` = '$wfo_id';");

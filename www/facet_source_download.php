@@ -47,7 +47,19 @@ download a file in the format you require.
 ?>
 <hr/>
 <p>
-<button type="button" data-bs-toggle="modal" data-bs-target="#generateModal" class="btn btn-primary" ><?php echo $button_text ?></button>
+
+<form>
+    <div class="mb-3">
+        <button type="button" data-bs-toggle="modal" data-bs-target="#generateModal" class="btn btn-primary" ><?php echo $button_text ?></button>
+    </div>
+    <div class="mb-3 form-check">
+        <input type="checkbox" class="form-check-input" id="includeSynonymsCheckbox" name="include_synonyms" value="true" >
+        <label class="form-check-label" for="includeSynonymsCheckbox"><strong>Include synonyms:</strong>
+        This will include the synonyms of accepted names in the list and of accepted names of synonyms in the list.
+        Be aware this can make the list very long as common species can have many synonyms.</label>
+    </div>
+</form>
+
 
 <!--  Modal -->
 <div class="modal fade" id="generateModal" tabindex="-1" aria-labelledby="generateModalLabel" aria-hidden="true">
@@ -72,8 +84,19 @@ download a file in the format you require.
 <script>
 
     function generateFilesPage(){
+
+        // we need to check if we are including synonyms or not
+        const checkbox = document.getElementById('includeSynonymsCheckbox');
+        let url = null;
+        if(checkbox.checked){
+            url = "facet_source_generate_files.php?include_synonyms=true&source_id=" + <?php echo $source_id ?>;
+        }else{
+            url = "facet_source_generate_files.php?source_id=" + <?php echo $source_id ?>;
+        }
+
+        // get a handle on the div we will be updating
         const modalContent = document.getElementById('generateModalContent');
-        fetch("facet_source_generate_files.php?source_id=" + <?php echo $source_id ?>)
+        fetch(url)
         .then(response => response.json())
         .then(json => {
             modalContent.innerHTML = json.message;
