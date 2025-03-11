@@ -277,7 +277,7 @@ class WfoFacets{
         FROM wfo_scores as ws
         JOIN facet_values AS fv ON ws.value_id = fv.id
         JOIN facets AS f ON fv.facet_id = f.id
-        JOIN sources AS s ON ws.source_id = s.id
+        JOIN sources AS s ON ws.source_id = s.id AND s.do_not_index = 0
         WHERE ws.wfo_id = '{$wfo_id}';";
 
         $response = $mysqli->query($sql);
@@ -310,7 +310,8 @@ class WfoFacets{
 
         $response = $mysqli->query("SELECT s.id, s.source_id, s.body, ss.category, ss.`language` 
             FROM wfo_facets.snippets as s 
-            JOIN snippet_sources as ss on s.source_id = ss.source_id
+            JOIN snippet_sources as ss on s.source_id = ss.source_id 
+            JOIN sources as sss on s.source_id = sss.id AND sss.do_not_index = 0
             WHERE s.wfo_id = '$wfo_id';");
 
         while($row = $response->fetch_assoc()){

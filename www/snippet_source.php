@@ -19,12 +19,15 @@ require_once('header.php');
     if($user && $user['role'] == 'god'){
         echo '<div style="float: right;">';
 
-        echo '<a class="btn btn-sm btn-success" href="snippet_source_taxa_index.php?source_id='. $source_id .'"
-        data-bs-toggle="tooltip"
-        data-bs-placement="bottom"
-        title="This will index all the taxa that are mentioned in this snippet source." 
-        role="button">Index taxa</a>';      
-      
+        // index but only if we can index
+        if(!$source['do_not_index']){
+            echo '<a class="btn btn-sm btn-success" href="snippet_source_taxa_index.php?source_id='. $source_id .'"
+            data-bs-toggle="tooltip"
+            data-bs-placement="bottom"
+            title="This will index all the taxa that are mentioned in this snippet source." 
+            role="button">Index taxa</a>';      
+        }
+              
         // duplicate button - very useful!
         // we just create a hidden form with the values in and post them to the create script
         echo '<form style="display: inline;" method="POST" action="snippet_source_create.php">';
