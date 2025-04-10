@@ -18,7 +18,7 @@
 
 ?>
 <p class="lead">
-Here you can download a copy of your list explanded with the classification in the current index.
+Here you can download a copy of your list expanded with the classification in the current index.
 It is a two stage process. Firstly you generate an export (which can be time consuming) then you 
 download a file in the format you require.
 </p>

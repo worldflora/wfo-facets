@@ -316,6 +316,10 @@ class ExporterFacets{
         if(!file_exists($this->htmlFilePath)){
             // open it and insert the header stuff
             $out = fopen($this->htmlFilePath, 'w');
+            
+            // add a bom for UTF-8 encoding
+            fwrite($out, "\xEF\xBB\xBF");
+
             $this->writeHtmlHeader($out);
 
             // check we are starting at the beginning of the db
@@ -378,7 +382,7 @@ class ExporterFacets{
 
         if($row_count == 0){
 
-            // close of the last lists
+            // close off the last lists
             fwrite($out, str_repeat('</ul></li>',  $this->depth));
 
             $this->writeUnplaced($out);
@@ -473,7 +477,10 @@ class ExporterFacets{
 
             // open it and insert the header stuff
             $out = fopen($this->csvFilePath, 'w');
-
+            
+            // add a bom for UTF-8 encoding
+            fwrite($out, "\xEF\xBB\xBF");
+            
             // put a header row in
             fputcsv($out, array(
                 'wfo_id',
@@ -580,7 +587,7 @@ class ExporterFacets{
         }
 
         $number_kids = $this->db->querySingle("SELECT count(*) FROM `records` WHERE `parent_id` = '$wfo_id';");
-        if($number_kids < 2){
+        if($number_kids > 1){
             return $wfo_id;
         }else{
             $child_wfo = $this->db->querySingle("SELECT wfo_id FROM `records` WHERE `parent_id` = '$wfo_id';");
